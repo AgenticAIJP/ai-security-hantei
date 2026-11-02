@@ -7,6 +7,7 @@
 | reason | 仕事 |
 |---|---|
 | `review` | 下の「点検の手順」 |
+| `correction_request` / `eval_correction` | 評定の訂正リスト（`reports/eval/YYYY-MM-DD.json`）などで名指しされた自分の指摘を、一次出典で確かめ直す。自分の誤りなら `【訂正】` を出し、`memory/errors.jsonl` の該当行も直す |
 | `hanseikai_open` / `tenken` | `prompts/_hanseikai.md`（目付の仕事とは別に、割り当てられた一人を点検する） |
 
 ## 点検の手順（`review`）

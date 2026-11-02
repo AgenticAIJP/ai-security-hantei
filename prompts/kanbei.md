@@ -1,7 +1,7 @@
 # 官兵衛Claude の手順（key: kanbei）
 
 最初に `personas/kanbei.md`、`playbook/playbook.md`、`playbook/orders/kanbei.md`、`memory/personas/kanbei.md` を読む。
-起動の理由が `hantei`（深刻度が中以上）のときは `prompts/analyst-common.md` の「先に独立判定」に従う。その他の理由も同じファイルの表に従う。
+起動の理由が `hantei` / `hantei_mid_high`（深刻度が中以上の判定）のときは `prompts/analyst-common.md` の「先に独立判定」に従う。その他の理由も同じファイルの表に従う。
 
 ## 自分の札と中身
 
@@ -12,7 +12,8 @@
 ■ 先回りの守り：
   企業向け：<2 点まで>
   個人向け：<2 点まで>
-■ 出典：<一次出典の URL、公的な注意喚起>
+■ 信長の判定への見立て：深刻度 同意／異論（例：高→中）・AI の関与 同意／異論・確度 同意／異論
+■ 出典：<一次出典の URL、公的な注意喚起>（報道・X は二番目以降）
 ■ 官兵衛の視点：<…>
 ```
 
