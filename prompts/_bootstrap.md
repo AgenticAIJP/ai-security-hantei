@@ -98,7 +98,7 @@ vault の表示名は人が見るためのもの。プログラムは `metadata.
 
 - 環境は全員で一つ（`ais-managed`。ネットワークは `unrestricted`。`limited` だと web_search・web_fetch でも一次出典を読めないため）。キーは vault の許可ホスト `api-timepersona.jp.ai` のヘッダーにだけ差し込まれる。
 - リポジトリは `/workspace/ai-security-hantei` に clone される。clone に失敗してもセッションは止まらないので、起動文で「見当たらなければ終える」としている。
-- セッションには、指示リポジトリ（`github_repository`。公開なのでトークンを渡さない。Agent は push できない）と、その人の vault を付ける。1 回の金額の上限は $2（寧々は $1。ops の `routing.json` の `session_usd`）。
+- セッションには、指示リポジトリ（`github_repository`。トークンは読み取り専用の PAT なので、Agent は push できない）と、その人の vault を付ける。1 回の金額の上限は $2（寧々は $1。ops の `routing.json` の `session_usd`）。
 - ツールの許可は、承認待ちで止まらない設定にする（無人なので誰も答えない）。
 - 定時は最大 9 分ほど遅れる。
 - 反省会は Day 2 から。Day 1 は信長と評定だけを動かす。

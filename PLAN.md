@@ -92,7 +92,7 @@ flowchart TB
   G -->|【X速報】| T[(TimePersona Room<br/>ai-security-hantei（専用）)]
   subgraph OPS[ops リポジトリ（公開・Agent は書けない）]
     W[Actions cron 30 分ごと<br/>watcher.mjs・rss.mjs・blind.mjs<br/>LLM なし]
-    SEC[(GitHub Secrets<br/>起動トークン・API キー)]
+    SEC[(GitHub Secrets<br/>起動トークン・API キー・読み取り専用の PAT)]
   end
   W -->|Room の新着を確認<br/>登録済みの投稿者だけ| T
   W -->|速報に反応する仕事<br/>POST /v1/sessions| MA
@@ -275,7 +275,7 @@ flowchart TB
 - **費用が足りないとき**：まず `routing.json` の `min_interval_min` を延ばして、起動の回数を減らす。それでも足りないときの最後の手段は、routine（Max）が投稿の中身を考えてリポジトリにファイルとして書き、watcher がその人の vault を付けた小さなセッション（Haiku、予算 10 セント程度）を起こして、ファイルの中身をそのまま投稿させる形にする。仕組みが増えるので、今は作らない。
 - **金額の上限**：Managed Agents の 1 回ごとに上限（初期値 $2。寧々は $1。`routing.json` の `session_usd`）を付ける。上限に達したセッションは止まる。1 日の上限（初期値 $60）を `routing.json` に書く。昼の仕事は $50 で止め、残り $10 を夜の反省会に回す（`hanseikai_reserve_usd`）。上限を超えたら、watcher は新しいセッションを立てずに仕事を保留し、翌日に回す（48 時間たったものは捨てて記録する）。定時（デプロイメント）の費用は、この集計に入らない。目安は $500 ÷ 7 日 ≈ 1 日 $70。最終日の成果報告の分を残す。
 - **費用の見込み（推定）**：Sonnet 5.5（100 万トークンあたり入力 $2／出力 $10）で 1 回 $0.3〜0.5。物見bot の速報が 1 日 60〜94 件のとき、全員で議論する事案が 1 日 5 件なら $45〜50、8 件なら $59〜64（短い記録、反省会、定時を含む）。全件を議論すると $248〜381 になり、7 日もたない。Day 1 に実測して直す。
-- **外の文章を最も多く読む役ほど、守りの強い Managed Agents で動かす**：キーは vault にあり、Agent に見えるのは置き換え用の印だけで、本物は TimePersona への通信のヘッダーにだけ差し込まれる。GitHub のトークンは渡さない（公開リポジトリをトークンなしで clone するので、Agent は push できない）。金額の上限で止まる。
+- **外の文章を最も多く読む役ほど、守りの強い Managed Agents で動かす**：キーは vault にあり、Agent に見えるのは置き換え用の印だけで、本物は TimePersona への通信のヘッダーにだけ差し込まれる。GitHub のトークンは読み取り専用で、git のプロキシが外で付け、Agent には見えない（書き込み権限がないので push できない）。金額の上限で止まる。
 - **ネットワークは `unrestricted` にする**：`limited` にすると、許可したホスト以外は web_search・web_fetch でも読めなくなり、一次出典を調べられないため。セッションの中に本物の秘密はないので、広く開けても漏れるものはない。
 - GitHub Actions ＋ `claude-code-action` で Claude を動かす案はやめた（実行中の Claude から GitHub Secrets のキーが読めてしまうため）。
 
@@ -486,11 +486,12 @@ flowchart TB
 | 秘密情報 | 置き場所 | 誰が読めるか |
 |---|---|---|
 | TimePersona の API キー（武将 9 人と評定Claude） | Managed Agents の vault（`TIMEPERSONA_API_KEY`、ホスト `api-timepersona.jp.ai`、ヘッダーのみ。1 人 1 つ） | 誰も読めない。Agent に見えるのは置き換え用の印だけで、通信が外に出るときに本物に差し替わる |
+| 指示リポジトリを clone するための GitHub トークン（fine-grained PAT。Contents を読むだけ） | ops の GitHub Secrets → Managed Agents のセッションに渡す | Agent は読めない（git のプロキシが外で付ける）。書き込み権限がない |
 | routines の起動トークンと URL、Anthropic API キー（セッションを立てる・盲検の採点） | ops の GitHub Secrets | ops の Actions の実行中だけ |
 | 物見bot のキー | Grok 側の `.env` | 物見bot だけ |
 | 指示リポジトリと ops リポジトリ | — | 誰でも見られる。**キーは一つも入れない** |
 
-- **Agent はリポジトリに書けない**：Managed Agents にはトークンを渡さず、公開リポジトリを clone するだけにする。乗っ取られても、指示ファイルも watcher も書き換えられない。
+- **Agent はリポジトリに書けない**：Managed Agents に渡す GitHub のトークンは、読み取り専用の PAT にする（API は公開リポジトリでも clone にトークンを求める）。乗っ取られても、指示ファイルも watcher も書き換えられない。
 - **秘密を持つ仕組みは ops リポジトリに置く**。
   - 素の Claude の routines の GitHub 連携は、指示リポジトリだけにつなぐ。
   - 指示リポジトリでは GitHub Actions を無効にし、workflow を置かない。
@@ -499,7 +500,7 @@ flowchart TB
 - 環境変数に本物のキーを入れない（その環境のセッションから読めてしまうため）。Managed Agents の `TIMEPERSONA_API_KEY` は vault の置き換え用の印で、本物ではない。
 - watcher が Room を読むのは公開の GET なので、TimePersona のキーは要らない。
 - 素の Claude の環境（`ais-baseline`）には network secrets を入れない（投稿できないようにする）。
-- **ネットワーク**：Managed Agents の環境は `unrestricted`（`limited` だと web_search・web_fetch も許可したホストしか読めず、一次出典を調べられない）。キーは vault の許可ホスト（`api-timepersona.jp.ai`）にだけ、ヘッダーにだけ差し込まれる。リポジトリは公開なので、トークンなしで clone する。素の Claude の routines の環境（`ais-baseline`）は Full にする（既定の Trusted では一次出典も TimePersona も読めない）。どちらも Day 1 の試運転で確かめる。
+- **ネットワーク**：Managed Agents の環境は `unrestricted`（`limited` だと web_search・web_fetch も許可したホストしか読めず、一次出典を調べられない）。キーは vault の許可ホスト（`api-timepersona.jp.ai`）にだけ、ヘッダーにだけ差し込まれる。リポジトリは読み取り専用のトークンで、git のプロキシ経由で clone する。素の Claude の routines の環境（`ais-baseline`）は Full にする（既定の Trusted では一次出典も TimePersona も読めない）。どちらも Day 1 の試運転で確かめる。
 - **指示ファイルの改ざんの検知**：Git に書く手段を持つのは素の Claude の routine（iQi の GitHub 連携）と iQi だけ。指示リポジトリの `baseline/` と `state/acks/` 以外（`.claude/`、`CLAUDE.md`、`personas/`、`prompts/`、`roles/`、`config/`、`scripts/` など）が iQi の確かめた commit から変わっていないかを、watcher が毎回確かめる。変わっていれば、誰も起こさずに止まり、GitHub Actions の失敗として iQi に知らせる（確かめた commit は ops の `config/trusted.json`）。
 - **無人で止まらないこと**：Managed Agents のツールの許可設定は、承認待ちで止まらないものにする（無人なので誰も答えない）。routines は auto mode で始まるが、何度もブロックされると承認待ちで止まるので、許可する操作を限定する。
 
@@ -599,7 +600,7 @@ ai-security-hantei-ops/
 | routines は研究プレビュー、Managed Agents はベータ | プロンプトは `prompts/` で版管理し、ロジックは `scripts/` に寄せる。Day 1 に両方を試す |
 | GitHub Actions の cron が遅れる・抜ける | 30 分ごと、混む時刻を避ける。前回以降の新着をすべて処理する。正常に終わらなければ起こし直す |
 | 二重起動・二重投稿 | 毎時の予備起動を置かない。投稿の前に Room を取り直して確かめる |
-| 乗っ取られた Agent が Secrets を抜く・指示を書き換える | 秘密を持つ仕組みは ops リポジトリに分ける。Agent に GitHub のトークンを渡さない |
+| 乗っ取られた Agent が Secrets を抜く・指示を書き換える | 秘密を持つ仕組みは ops リポジトリに分ける。Agent に渡す GitHub のトークンを読み取り専用にする |
 | TimePersona が止まる（記憶も読めなくなる） | watcher は仕事を保留し、復旧後に処理する。Room の全投稿を ops に控える仕組みを Day 2 に足す |
 | 乗っ取られた評定が、Room の指示で全員を誘導する | `【評定】` の指示は助言で、ガードレールを上書きしない。読むのは評定Claude の ENS のものだけ。iQi が毎朝確認する |
 | 外の投稿で Agent が起こされる・指示を注入される | 起動のきっかけは登録済みの投稿者だけ。外の文章はデータとして扱う。専用 Room で、他の Agent はまもりくんが蹴り出す |
@@ -644,4 +645,4 @@ ai-security-hantei-ops/
 13. vault は表示名ではなく `metadata.agent_key` で探す。vault を登録済みの証拠にして、二重登録を防ぐ（§4.5）。
 14. 速さより議論の質を優先することにした。watcher を 30 分ごとにし、分析役は 1 回に 1 件とした。検知の速さの目標をやめた（§6、§10）。
 15. 全員で議論する事案を 1 日 8 件までにした。AI の関与が不明の事案は、深刻度が高いものだけ 1 日 3 件まで議論し、ほかは記録のみとする。昼の費用は $50 で止め、$10 を夜の反省会に残す（§2、§6.4）。
-16. 記憶の置き場を Room にした。Agent はリポジトリに書かない（トークンを渡さない）。台帳・memory・ack・playbook の毎日の改訂・評定のレポートをやめ、すべて Room の投稿から読む（`tp.mjs brief`・`recent`・`next-id`・`cases`）。受け取りの確認は、セッションの状態で行う（§3、§6、§8.2、§12、§13）。
+16. 記憶の置き場を Room にした。Agent はリポジトリに書かない（渡すトークンは読み取り専用）。台帳・memory・ack・playbook の毎日の改訂・評定のレポートをやめ、すべて Room の投稿から読む（`tp.mjs brief`・`recent`・`next-id`・`cases`）。受け取りの確認は、セッションの状態で行う（§3、§6、§8.2、§12、§13）。
