@@ -4,6 +4,9 @@
 *.pem
 *.key
 
+# 登録の控え（キーは含まないが、vault と credential の ID があるので手元だけに置く）
+register-state.json
+
 # OS・エディタ
 .DS_Store
 Thumbs.db
@@ -14,3 +17,6 @@ Thumbs.db
 node_modules/
 npm-debug.log*
 *.log
+
+# 手元だけの調査報告（公開しない）
+reports/managed-agents-sdk-report-2026-11-02.md

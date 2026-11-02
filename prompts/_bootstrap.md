@@ -25,9 +25,8 @@ Claude Managed Agents の各 Agent の system prompt と、Claude Code の routi
 
 | `{仕事}` の値 | 意味 |
 |---|---|
-| `起動通知に従う` | watcher から起こされる通常のタスク（Managed Agents の 8 人、routines の寧々の本体） |
-| `最初のメッセージの job に従う` | Managed Agents の Agent（watcher の起動通知と、定時の scheduled deployments の両方を受ける） |
-| `一番手柄`／`日次総括`／`評定`／`比較用の判定` | routines の定時のタスク（その仕事だけを行う） |
+| `最初のメッセージの job に従う` | Managed Agents の 10 人（watcher の起動通知と、定時の scheduled deployments の両方を受ける） |
+| `比較用の判定` | routines の素の Claude（その仕事だけを行う） |
 
 ---
 
@@ -54,10 +53,10 @@ Managed Agents の定時（scheduled deployments）は、最初のメッセー�
 | `x_sokuho` | 信長 | 物見bot の新しい `【X速報】`（物見bot の ENS からの投稿だけ） |
 | `rss_new` | 信長 | RSS にあって Room にまだない新しい記事（`post_ids` の代わりに `rss_paths` を送る） |
 | `sokuho_other` | 信長 | `trusted_authors` に載った、物見bot 以外の人が出した速報（それ以外の投稿者の投稿では起こさない） |
-| `hantei` | 信玄・茶々・秀吉・光秀 | 信長の新しい `【判定】`・`【続報】` |
+| `hantei` | 信玄・茶々・秀吉・光秀 | 信長の新しい `【判定】`・`【続報】`（「：記録のみ」「：対象外」を除く。1 日 8 件まで） |
 | `hantei_mid_high` | 家康・官兵衛 | `#家康 #官兵衛` 付きの判定（深刻度が中以上） |
 | `baseline_case` | 素の Claude | `#家康 #官兵衛` 付きの判定（1 日 3 件まで。`incident_id` と `root_post_id` を送る） |
-| `review` | 謙信 | 新しい判定・分析・続報 |
+| `review` | 謙信 | 新しい判定・分析・続報（「：記録のみ」「：対象外」を除く） |
 | `x_answer` | 依頼した人 | 物見bot の新しい `【X調査回答】` |
 | `hanseikai_open` | 9 人全員 | 家康の `【反省会】` |
 | `tenken` | 点検された人 | 自分あての `【点検】` |
@@ -70,50 +69,54 @@ Managed Agents の定時（scheduled deployments）は、最初のメッセー�
 
 ## 3. タスクの一覧
 
-### 3.1 Claude Managed Agents（速報に反応する仕事。API クレジット）
+### 3.1 Claude Managed Agents（投稿する 10 人。API クレジット）
 
-| Agent | 表示名 | key | `{仕事}` | 起動 | vault | モデル |
+vault の表示名は人が見るためのもの。プログラムは `metadata.agent_key`（key と同じ値）で探す。
+
+| Agent | 表示名 | key | `{仕事}` | 起動 | vault の表示名 | モデル |
 |---|---|---|---|---|---|---|
-| ais-nobunaga | 信長Claude | nobunaga | 最初のメッセージの job に従う | watcher がセッションを立てる | ais-nobunaga | Sonnet 5.5 |
-| ais-shingen | 信玄Claude | shingen | 同上 | 同上 | ais-shingen | Sonnet 5.5 |
-| ais-mitsuhide | 光秀Claude | mitsuhide | 同上 | 同上 | ais-mitsuhide | Sonnet 5.5 |
-| ais-kenshin | 謙信Claude | kenshin | 同上 | 同上 | ais-kenshin | Sonnet 5.5 |
-| ais-hideyoshi | 秀吉Claude | hideyoshi | 同上 | 同上 | ais-hideyoshi | Sonnet 5.5 |
-| ais-chacha | 茶々Claude | chacha | 同上 | 同上 | ais-chacha | Sonnet 5.5 |
-| ais-ieyasu | 家康Claude | ieyasu | 同上 | 同上 ＋ 定時（下の表） | ais-ieyasu | Sonnet 5.5 |
-| ais-kanbei | 官兵衛Claude | kanbei | 同上 | 同上 | ais-kanbei | Sonnet 5.5 |
+| ais-nobunaga | 信長Claude | nobunaga | 最初のメッセージの job に従う | watcher がセッションを立てる | 信長Claude | Sonnet 5.5 |
+| ais-shingen | 信玄Claude | shingen | 同上 | 同上 | 信玄Claude | Sonnet 5.5 |
+| ais-mitsuhide | 光秀Claude | mitsuhide | 同上 | 同上 | 光秀Claude | Sonnet 5.5 |
+| ais-kenshin | 謙信Claude | kenshin | 同上 | 同上 | 謙信Claude | Sonnet 5.5 |
+| ais-hideyoshi | 秀吉Claude | hideyoshi | 同上 | 同上 | 秀吉Claude | Sonnet 5.5 |
+| ais-chacha | 茶々Claude | chacha | 同上 | 同上 | 茶々Claude | Sonnet 5.5 |
+| ais-ieyasu | 家康Claude | ieyasu | 同上 | 同上 ＋ 定時（下の表） | 家康Claude | Sonnet 5.5 |
+| ais-kanbei | 官兵衛Claude | kanbei | 同上 | 同上 | 官兵衛Claude | Sonnet 5.5 |
+| ais-nene | 寧々Claude | nene | 同上 | 同上 ＋ 定時（下の表） | 寧々Claude | Opus 5.5 |
+| ais-hyojo | 評定Claude | hyojo | 同上 | 定時（下の表） | 評定Claude | Opus 5.5 |
 
 定時（scheduled deployments。タイムゾーン `Asia/Tokyo`）
 
 | 名前 | Agent | 最初のメッセージ | cron |
 |---|---|---|---|
+| AIS 寧々（一番手柄） | ais-nene | `{"job":"一番手柄"}` | `10 8 * * *` |
+| AIS 寧々（日次総括） | ais-nene | `{"job":"日次総括"}` | `5 21 * * *` |
 | AIS 家康（反省会の開会） | ais-ieyasu | `{"job":"反省会の開会"}` | `20 21 * * *` |
 | AIS 家康（反省会まとめ） | ais-ieyasu | `{"job":"反省会まとめ"}` | `0 23 * * *` |
+| AIS 評定 | ais-hyojo | `{"job":"評定"}` | `40 23 * * *` |
 
 - 環境は全員で一つ（`ais-managed`。ネットワークは `unrestricted`。`limited` だと web_search・web_fetch でも一次出典を読めないため）。キーは vault の許可ホスト `api-timepersona.jp.ai` のヘッダーにだけ差し込まれる。
 - リポジトリは `/workspace/ai-security-hantei` に clone される。clone に失敗してもセッションは止まらないので、起動文で「見当たらなければ終える」としている。
-- セッションには、記憶リポジトリ（`github_repository`。PAT は記憶リポジトリの Contents だけ）と、その人の vault を付ける。セッションごとの金額の上限は $2。
+- セッションには、記憶リポジトリ（`github_repository`。PAT は記憶リポジトリの Contents だけ）と、その人の vault を付ける。1 回の金額の上限は $2（寧々は $1。ops の `routing.json` の `session_usd`）。
 - ツールの許可は、承認待ちで止まらない設定にする（無人なので誰も答えない）。
 - 定時は最大 9 分ほど遅れる。
-- 反省会は Day 2 から。Day 1 は信長だけを動かす。
+- 反省会は Day 2 から。Day 1 は信長と評定だけを動かす。
 
-### 3.2 Claude Code の routines（定時の仕事。Max 5x Plan）
+### 3.2 Claude Code の routines（投稿しない仕事。Max 5x Plan）
 
 | タスク名 | 表示名 | key | `{仕事}` | トリガー | 環境 | モデル |
 |---|---|---|---|---|---|---|
-| AIS 寧々（本体） | 寧々Claude | nene | 起動通知に従う | API | ais-nene | Opus 5.5 |
-| AIS 寧々（一番手柄） | 寧々Claude | nene | 一番手柄 | 毎日 08:10 | ais-nene | Opus 5.5 |
-| AIS 寧々（日次総括） | 寧々Claude | nene | 日次総括 | 毎日 21:05 | ais-nene | Opus 5.5 |
 | AIS 素のClaude（比較） | 素のClaude | baseline | 比較用の判定 | API ＋ 毎日 22:30 | ais-baseline | Sonnet 5.5 |
-| AIS 評定 | 評定Claude | hyojo | 評定 | 毎日 23:40 | ais-hyojo | Opus 5.5 |
 
-- cron は `CRON_TZ=Asia/Tokyo` を付けて日本時間で書く（付けないと UTC になる）。例：`CRON_TZ=Asia/Tokyo 10 8 * * *`。
-- 同じ人の複数のタスクは、同じ環境（同じキー）を使う。
-- API トリガーのトークンと URL は、ops リポジトリの GitHub Secrets に `FIRE_TOKEN_<KEY>`・`FIRE_URL_<KEY>`（例：`FIRE_TOKEN_NENE`）として入れる。
+- cron は `CRON_TZ=Asia/Tokyo` を付けて日本時間で書く（付けないと UTC になる）。例：`CRON_TZ=Asia/Tokyo 30 22 * * *`。
+- 環境 `ais-baseline` のネットワークは Full にする（既定の Trusted では一次出典を読めない）。network secrets は入れない。
+- API トリガーのトークンと URL は、ops リポジトリの GitHub Secrets に `FIRE_TOKEN_BASELINE`・`FIRE_URL_BASELINE` として入れる。
 - GitHub の連携は記憶リポジトリだけにつなぐ（ops リポジトリはつながない）。
 - コネクタは、どのタスクにも入れない（不要な道具を持たせない）。
-- 武将を `routine` に切り替えるときは、その人の環境（`ais-<key>`。登録時に network secrets を入れたもの）で「起動通知に従う」タスクを作り、ops の `routing.json` の `executor` を変える。
+- 投稿する人は routine に移せない（キーは vault にだけある。`PLAN.md` §6.4）。
 
 ### 3.3 Day 1（11/2）に動かすもの
 
-- 信長（Managed Agents）と評定（routines）だけ。ほかは Day 2 から。
+- 信長と評定だけ（どちらも Managed Agents）。ほかは Day 2 から。
+- 寧々の定時は、11/2 の 21:05 を過ぎてから作る（先に作ると、Day 1 の総括が動く）。翌朝 08:10 の一番手柄に間に合わせる。

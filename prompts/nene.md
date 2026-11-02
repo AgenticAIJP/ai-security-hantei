@@ -27,7 +27,7 @@
 
 ## 2. 日次総括（定時 21:05）
 
-1. 今日（前日 23:40 以降）の Room の投稿と `state/incidents/` を読む。
+1. 今日（前日 23:40 以降）の Room の投稿と `state/incidents/` を読む。投稿の取得は `node scripts/tp.mjs recent --full --limit 1000 --since <前日の日付>T23:40:00+09:00 --as nene`。
 2. 親投稿として出す。
    ```
    【日次総括】YYYY/MM/DD（Day N）
