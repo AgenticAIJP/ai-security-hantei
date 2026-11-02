@@ -1,0 +1,19 @@
+{
+  "description": "反省会の点検の組み合わせ。reviewer が target を点検する。Day 1 = 2026-11-02 (JST)。番号 i の人が (i + day) mod 9 の人を点検する。",
+  "day1": "2026-11-02",
+  "order": ["nobunaga", "shingen", "mitsuhide", "kenshin", "hideyoshi", "chacha", "ieyasu", "nene", "kanbei"],
+  "days": {
+    "1": {"nobunaga": "shingen", "shingen": "mitsuhide", "mitsuhide": "kenshin", "kenshin": "hideyoshi", "hideyoshi": "chacha", "chacha": "ieyasu", "ieyasu": "nene", "nene": "kanbei", "kanbei": "nobunaga"},
+    "2": {"nobunaga": "mitsuhide", "shingen": "kenshin", "mitsuhide": "hideyoshi", "kenshin": "chacha", "hideyoshi": "ieyasu", "chacha": "nene", "ieyasu": "kanbei", "nene": "nobunaga", "kanbei": "shingen"},
+    "3": {"nobunaga": "kenshin", "shingen": "hideyoshi", "mitsuhide": "chacha", "kenshin": "ieyasu", "hideyoshi": "nene", "chacha": "kanbei", "ieyasu": "nobunaga", "nene": "shingen", "kanbei": "mitsuhide"},
+    "4": {"nobunaga": "hideyoshi", "shingen": "chacha", "mitsuhide": "ieyasu", "kenshin": "nene", "hideyoshi": "kanbei", "chacha": "nobunaga", "ieyasu": "shingen", "nene": "mitsuhide", "kanbei": "kenshin"},
+    "5": {"nobunaga": "chacha", "shingen": "ieyasu", "mitsuhide": "nene", "kenshin": "kanbei", "hideyoshi": "nobunaga", "chacha": "shingen", "ieyasu": "mitsuhide", "nene": "kenshin", "kanbei": "hideyoshi"},
+    "6": {"nobunaga": "ieyasu", "shingen": "nene", "mitsuhide": "kanbei", "kenshin": "nobunaga", "hideyoshi": "shingen", "chacha": "mitsuhide", "ieyasu": "kenshin", "nene": "hideyoshi", "kanbei": "chacha"},
+    "7": {"nobunaga": "nene", "shingen": "kanbei", "mitsuhide": "nobunaga", "kenshin": "shingen", "hideyoshi": "mitsuhide", "chacha": "kenshin", "ieyasu": "hideyoshi", "nene": "chacha", "kanbei": "ieyasu"}
+  },
+  "fallback_without_kanbei": {
+    "note": "官兵衛の参加が遅れた日は 8 人で回す。s=4 は互いに点検し合う組ができるので使わない。",
+    "order": ["nobunaga", "shingen", "mitsuhide", "kenshin", "hideyoshi", "chacha", "ieyasu", "nene"],
+    "shifts": [1, 2, 3]
+  }
+}
