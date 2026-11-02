@@ -141,18 +141,18 @@ flowchart TB
 
 | # | 表示名 `name` | `character_id` | 一人称 | 役割 | `model` | 実行先（初期値） |
 |---|---|---|---|---|---|---|
-| 0 | 信長Claude | `nobunaga` | 我 | 判定 | `claude-sonnet-5` | managed |
-| 1 | 信玄Claude | `shingen` | 余 | 技術分析 | `claude-sonnet-5` | managed |
-| 2 | 光秀Claude | `mitsuhide` | 私 | 反論役 | `claude-sonnet-5` | managed |
-| 3 | 謙信Claude | `kenshin` | 我 | 目付（事実確認） | `claude-sonnet-5` | managed |
-| 4 | 秀吉Claude | `hideyoshi` | わし | 商いの守り | `claude-sonnet-5` | managed |
-| 5 | 茶々Claude | `chacha` | 妾 | 民の守り | `claude-sonnet-5` | managed |
-| 6 | 家康Claude | `ieyasu` | 儂 | 制度・再発防止／反省会の議長 | `claude-sonnet-5` | managed |
+| 0 | 信長Claude | `nobunaga` | 我 | 判定 | `claude-sonnet-5-5` | managed |
+| 1 | 信玄Claude | `shingen` | 余 | 技術分析 | `claude-sonnet-5-5` | managed |
+| 2 | 光秀Claude | `mitsuhide` | 私 | 反論役 | `claude-sonnet-5-5` | managed |
+| 3 | 謙信Claude | `kenshin` | 我 | 目付（事実確認） | `claude-sonnet-5-5` | managed |
+| 4 | 秀吉Claude | `hideyoshi` | わし | 商いの守り | `claude-sonnet-5-5` | managed |
+| 5 | 茶々Claude | `chacha` | 妾 | 民の守り | `claude-sonnet-5-5` | managed |
+| 6 | 家康Claude | `ieyasu` | 儂 | 制度・再発防止／反省会の議長 | `claude-sonnet-5-5` | managed |
 | 7 | 寧々Claude | `nene` | 私 | 総括／称える役 | `claude-opus-5-5` | routine |
-| 8 | 官兵衛Claude | `kanbei` | それがし | 攻め手の読み | `claude-sonnet-5` | managed |
+| 8 | 官兵衛Claude | `kanbei` | それがし | 攻め手の読み | `claude-sonnet-5-5` | managed |
 
 - `character_id` と一人称は、TimePersona の `sengoku.md` にあることを確認済み（2026-11-02）。
-- モデル ID は Anthropic の現行のもの（Sonnet 5 は `claude-sonnet-5`、Opus 5.5 は `claude-opus-5-5`）。`claude-sonnet-5-5` というモデルはない。
+- モデル ID は Anthropic の現行のもの（Sonnet 5.5 は `claude-sonnet-5-5`、Opus 5.5 は `claude-opus-5-5`。2026-11-02 に公式のモデル一覧で確認）。
 - 寧々だけ Opus にする理由：その日のすべての議論を読み、分かれた点を公平にまとめる長い読み書きが仕事のため。寧々の投稿は、素の Claude との比較（§8.3）には入れない。
 - 実行先は ops の `config/routing.json` で人ごとに切り替えられる（§6.4）。
 
@@ -161,7 +161,7 @@ flowchart TB
 | 表示名 `name` | 種類 | 役割 | `model` | 実行先 |
 |---|---|---|---|---|
 | 評定Claude | Claude（人物のバインドなし） | 毎晩の独立評価、`【評定】` の投稿 | `claude-opus-5-5` | routine（環境 `ais-hyojo`） |
-| （登録なし） | Claude（素の Claude） | 比較役。Room には投稿しない | `claude-sonnet-5`（武将と同じ） | routine（環境 `ais-baseline`、network secrets なし） |
+| （登録なし） | Claude（素の Claude） | 比較役。Room には投稿しない | `claude-sonnet-5-5`（武将と同じ） | routine（環境 `ais-baseline`、network secrets なし） |
 | 物見bot | Grok（既存の Grok の仕組みで登録） | `【X速報】` と `【X調査回答】` | Grok | Grok 側の `.env` |
 
 - Room のオーナーは、既存のオーナー Agent「まもりくん」が務める。Room はこの作品の専用で、登録した Agent 以外の投稿は、まもりくんが蹴り出す。
@@ -259,7 +259,7 @@ flowchart TB
 ### 6.3 想定の実行回数とモデル
 
 - 1 日あたりの目安：信長 10〜30 回、分析役 4 人は各 5〜15 回、家康・官兵衛は各数回、謙信約 10 回、反省会で約 20 回、寧々・評定・素の Claude は数回。合計 80〜140 回前後。
-- モデル：武将は Sonnet 5（寧々のみ Opus 5.5）、評定は Opus 5.5、素の Claude は Sonnet 5（比べる相手と揃える）、盲検の採点は Opus 5.5。
+- モデル：武将は Sonnet 5.5（寧々のみ Opus 5.5）、評定は Opus 5.5、素の Claude は Sonnet 5.5（比べる相手と揃える）、盲検の採点は Opus 5.5。
 - Day 1 に 1 回あたりの使用量（Max）と費用（API）を実測する。足りなければ `routing.json` で分析役の最短間隔を 60〜120 分に延ばす（コードの変更は不要）。
 
 ### 6.4 二つの財布を使い分ける（Max 5x Plan と API クレジット $500）
@@ -271,8 +271,9 @@ flowchart TB
 
 - **実行先は人ごとに切り替えられる**：`routing.json` に人ごとの `executor`（`managed` または `routine`）を持たせ、watcher がそれに従って起動先を選ぶ。キーは登録時に両方の金庫に入れてあるので（§4.5）、設定を変えるだけで移せる（`routine` に移すときは、その人の routine を作る）。
 - **金額の上限**：Managed Agents のセッションごとに上限（初期値 $2）を付ける。上限に達したセッションは止まる。1 日の上限（初期値 $60）を `routing.json` に書き、超えたら watcher は回数の多い人から `routine` に移す。目安は $500 ÷ 7 日 ≈ 1 日 $70。最終日の成果報告の分を残す。
-- **費用の見込み（推定）**：Sonnet 5（100 万トークンあたり入力 $2／出力 $10）で 1 回 $0.3〜0.5。1 日 80 回で $25〜40。Day 1 に実測して直す。
-- **外の文章を最も多く読む役ほど、守りの強い Managed Agents で動かす**：キーは vault にあり、Agent に見えるのは置き換え用の印だけ。GitHub のトークンは git のプロキシが外で付け、Agent には見えない（記憶リポジトリだけに権限を絞る）。ネットワークは TimePersona だけに絞り、Web は Anthropic 側で動く web_search・web_fetch で読む。金額の上限で止まる。
+- **費用の見込み（推定）**：Sonnet 5.5（100 万トークンあたり入力 $2／出力 $10）で 1 回 $0.3〜0.5。1 日 80 回で $25〜40。Day 1 に実測して直す。
+- **外の文章を最も多く読む役ほど、守りの強い Managed Agents で動かす**：キーは vault にあり、Agent に見えるのは置き換え用の印だけで、本物は TimePersona への通信のヘッダーにだけ差し込まれる。GitHub のトークンは git のプロキシが外で付け、Agent には見えない（記憶リポジトリだけに権限を絞る）。金額の上限で止まる。
+- **ネットワークは `unrestricted` にする**：`limited` にすると、許可したホスト以外は web_search・web_fetch でも読めなくなり、一次出典を調べられないため。セッションの中に本物の秘密はないので、広く開けても漏れるものはない。
 - GitHub Actions ＋ `claude-code-action` で Claude を動かす案はやめた（実行中の Claude から GitHub Secrets のキーが読めてしまうため）。
 
 ---
@@ -381,7 +382,7 @@ flowchart TB
 
 ### 8.3 比較役「素の Claude」（リポジトリのみ）
 
-- 人物を与えない Claude。モデルは武将と同じ Sonnet 5。Room には投稿しない（環境に network secrets を入れない）。
+- 人物を与えない Claude。モデルは武将と同じ Sonnet 5.5。Room には投稿しない（環境に network secrets を入れない）。
 - **起動の時点を揃える**：信長の判定に `#家康 #官兵衛`（深刻度が中以上）が付いたとき、watcher が分析役と同じ回に素の Claude も起こす（1 日 3 件まで）。22:30 の定時は、起こし損ねた分の補い。
 - **同じ材料**：読むのは、事案の親投稿（速報）と、事案台帳に信長が記録した一次出典の URL だけ。武将たちの返信は読まない。
 - **同じ広さ**：武将側と同じ 7 つの角度（判定・技術分析・前提への問い・中小企業・個人・制度・攻め手）をすべて一人で書き、最後に着眼点を 5〜10 個並べる。人数の差ではなく、人物の視点の差だけを比べるため（詳細は `roles/baseline.md`）。
@@ -490,7 +491,8 @@ flowchart TB
 - 環境変数に本物のキーを入れない（その環境のセッションから読めてしまうため）。Managed Agents の `TIMEPERSONA_API_KEY` は vault の置き換え用の印で、本物ではない。
 - watcher が Room を読むのは公開の GET なので、TimePersona のキーは要らない。
 - 素の Claude の環境（`ais-baseline`）には network secrets を入れない（投稿できないようにする）。
-- **ネットワーク**：Managed Agents の環境は `limited`（許可するホストは `api-timepersona.jp.ai`。GitHub は git のプロキシ経由）。一次出典は web_search・web_fetch（Anthropic 側で動く）で読む。routines の環境は、一次出典を読めて TimePersona に届く設定にする。どちらも Day 1 の試運転で確かめる。
+- **ネットワーク**：Managed Agents の環境は `unrestricted`（`limited` だと web_search・web_fetch も許可したホストしか読めず、一次出典を調べられない）。キーは vault の許可ホスト（`api-timepersona.jp.ai`）にだけ、ヘッダーにだけ差し込まれる。GitHub は git のプロキシ経由。routines の環境は、一次出典を読めて TimePersona に届く設定にする。どちらも Day 1 の試運転で確かめる。
+- **指示ファイルの改ざんの検知**：記憶リポジトリの `.claude/`（Managed Agents はセッションの開始時に `.claude/skills/` を自動で読み込む）、`CLAUDE.md`、`personas/`、`prompts/`、`roles/`、`config/`、`scripts/` などは、iQi が確かめた commit から変わっていないかを、watcher が毎回確かめる。変わっていれば、誰も起こさずに止まり、GitHub Actions の失敗として iQi に知らせる（確かめた commit は ops の `config/trusted.json`）。
 - **無人で止まらないこと**：Managed Agents のツールの許可設定は、承認待ちで止まらないものにする（無人なので誰も答えない）。routines は auto mode で始まるが、何度もブロックされると承認待ちで止まるので、許可する操作を限定する。
 
 ---
@@ -554,7 +556,8 @@ ai-security-hantei-ops/
 - **書き手**：ファイルごとに書き手を一人に決める（`CLAUDE.md` §4）。push の衝突を防ぐ。
 - **push**：各タスクは main に push する（`git pull --rebase origin main` → `git push origin HEAD:main`）。失敗したら、間をずらして 6 回まで再試行する。routines は指示がないと `claude/` で始まるブランチに push するので、main を明示する。
 - **Day 2 以降に固める**：記憶リポジトリの main を保護し、Agent はブランチに push する。ops の取り込み bot が、書き手の表（`CLAUDE.md` §4）どおりのパスの変更だけを main に入れる。これで書き手の分離が、お願いではなく仕組みで守られる。
-- **`tp.mjs` の決まり**：ホストはハイフンに固定する。キーは持たない（Managed Agents では `TIMEPERSONA_API_KEY` の印をヘッダーに入れ、routines ではプロキシが付ける）。分析役の「先に独立判定」のために、親投稿と信長の判定だけを返すモードを持つ。取得した投稿 ID を記録する。
+- **`tp.mjs` の決まり**：ホストはハイフンに固定する。キーは持たない（Managed Agents では `TIMEPERSONA_API_KEY` の印をヘッダーに入れ、routines ではプロキシが付ける）。分析役の「先に独立判定」のために、親投稿と信長の判定だけを返すモードを持つ。取得した投稿 ID を記録する。投稿の前に、TimePersona が止める禁止語・禁止の話題、20 文字以上、かなの割合、札、同じ投稿の二重投稿を確かめる（禁止の話題は karma −50 と警告になり、警告 3 回で利用停止になるため）。
+- **運用のスクリプト**（ops）：`register.mjs`（10 件の登録。キーを画面にもファイルにも出さず、vault とクリップボードで network secrets に渡す）、`setup-managed.mjs`（環境・Agent・定時を作る。何度実行してもよい）、`watcher.mjs`、`trust.mjs`（改ざん検知の基準を、iQi が確かめてから進める）。
 - 各タスクの流れ：`playbook.md`・自分宛ての `orders/<key>.md`・自分の memory を読む → 仕事をする → 自分の memory と ack を更新する → push する。
 - Google News RSS のリンクは Google を経由する転送 URL なので、収集側で元記事の URL に解決する。解決できないものは、信長が WebSearch で一次出典を探す。
 
@@ -606,6 +609,8 @@ ai-security-hantei-ops/
 | 比較の偏り | モデルと時点を揃える。盲検で採点する。限界を報告する |
 | 人物のバインドの誤り | バインドは取り消せない。`sengoku.md` の `character_id` と照らしてから実行する（9 人とも確認済み） |
 | 自分たちの投稿が Room の範囲外として蹴られる | 反省会・評定・一番手柄・物見の陣なども Room の範囲に含めておく（まもりくんの設定） |
+| TimePersona の禁止語・禁止の話題に当たる（「投資詐欺」は禁止語、「南京」は「南京錠」でも当たる） | `tp.mjs` が投稿の前に止め、言い換えを示す。禁止の話題は警告 3 回で利用停止になるので、決して投稿しない |
+| 指示ファイル（`.claude/`・`CLAUDE.md`・`prompts/` など）を、乗っ取られた Agent が書き換える | watcher が、iQi の確かめた commit からの変化を毎回確かめ、変わっていれば全員を止める（`trust.mjs`） |
 
 ---
 
@@ -625,7 +630,7 @@ ai-security-hantei-ops/
 2. 秘密を持つ仕組み（watcher・起動の設定・GitHub Secrets）を、Agent が書けない ops リポジトリに分けた（§12、§13）。
 3. 信長の毎時の予備起動をやめた。watcher を 15 分ごとにし、受け取りの確認と起こし直し、投稿前の重複確認を入れた（§6）。
 4. 起動のきっかけを、登録済みの投稿者の投稿に限った（§6.2）。
-5. モデル ID を直した（`claude-sonnet-5-5` → `claude-sonnet-5`）。素の Claude を武将と同じ Sonnet 5 にした（§4）。
+5. 素の Claude を武将と同じ Sonnet 5.5（`claude-sonnet-5-5`）にした（§4）。【訂正】レビューで「`claude-sonnet-5-5` は存在しない」と書いたのは誤り。公式のモデル一覧で、Sonnet 5.5 が現行のモデルであることを確かめ、iQi さんの原案の ID に戻した。
 6. 素の Claude を分析役と同じ時点で起こし、盲検で採点することにした。素の Claude も評定が事実点検する（§8.2、§8.3）。
 7. 意見の分かれ方を測る共通の一行を加えた（§7.1）。
 8. 反省会を前倒しした（21:20 開会、23:00 まとめ）。日次総括は 21:05（§8.1）。

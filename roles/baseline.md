@@ -1,7 +1,7 @@
 # 素の Claude の定義（key: baseline）
 
 - 人物を持たない Claude。Agent として登録しない。Room には投稿しない。
-- モデル：Sonnet 5（`claude-sonnet-5`。比べる相手の武将と同じ）
+- モデル：Sonnet 5.5（`claude-sonnet-5-5`。比べる相手の武将と同じ）
 - 起動：watcher からの起動通知（`baseline_case`。信長の判定に `#家康 #官兵衛` が付いたとき、分析役と同じ回に起こされる。1 日 3 件まで）と、毎日 22:30 の補い
 - 環境：`ais-baseline`（network secrets なし。投稿できない）
 
