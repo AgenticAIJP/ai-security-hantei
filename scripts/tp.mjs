@@ -14,6 +14,7 @@
 //   node scripts/tp.mjs get <post_id>
 //   node scripts/tp.mjs recent [--limit 50] [--full] [--after <post_id>] [--since <ISO 8601>] [--author <key|ENS>] [--tag <札>] [--grep <語>]
 //   node scripts/tp.mjs next-id                                                         # 次の事案 ID
+//   node scripts/tp.mjs quota                                                           # 全員で議論できる残りの枠
 //   node scripts/tp.mjs cases [--since <ISO 8601>]                                      # 比較役用：判定の中身を見せずに、事案と一次出典の URL だけを返す
 //   node scripts/tp.mjs me
 //   node scripts/tp.mjs ack --as baseline <id> [<id> ...]                               # 素の Claude だけ（ほかの人は Git に書かない）
@@ -31,7 +32,7 @@ const ROOM_ID = 'ai-security-hantei';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // 自分たちが使う札（CLAUDE.md §6）
-const TAGS = ['速報', '判定', '独立判定', '技術分析', '反論', '攻め手の読み', '制度の視点', '目付', '訂正', '重複',
+const TAGS = ['速報', '判定', '判定まとめ', '独立判定', '技術分析', '反論', '攻め手の読み', '制度の視点', '目付', '訂正', '重複',
   'X調査依頼', '一番手柄', '日次総括', '反省会', '点検', '応答', '反省会まとめ', '評定'];
 
 // TimePersona が投稿を止める言葉（backend の banned_words.json と同じ。小文字で部分一致）
@@ -389,6 +390,23 @@ async function cmdBrief(args) {
   return 0;
 }
 
+// 議論の枠。ops の routing.json の hantei_daily_max・hantei_slot_hours と同じ値にする（watcher も同じ計算で止める）
+const DISCUSSION_DAILY_MAX = 8;
+const DISCUSSION_SLOT_HOURS = 3;
+
+/** 全員で議論できる残りの枠。今日の議論の数は、Room の信長の投稿から数える。 */
+async function cmdQuota() {
+  const nobunaga = loadAgents().find((a) => a.key === 'nobunaga')?.ens?.toLowerCase();
+  const since = Date.parse(`${jstDate()}T00:00:00+09:00`);
+  const { posts } = await roomPosts(2000);
+  const used = posts.filter((p) => p.agent?.toLowerCase() === nobunaga && Date.parse(p.posted_at) >= since
+    && ['判定', '続報'].includes(firstTag(p.content ?? '')) && !/[：:]\s*(対象外|記録のみ|枠外)/.test(firstLine(p.content ?? ''))).length;
+  const hour = Number(new Date(Date.now() + 9 * 3600e3).toISOString().slice(11, 13));
+  const allowed = Math.min(DISCUSSION_DAILY_MAX, 1 + Math.floor(hour / DISCUSSION_SLOT_HOURS));
+  out({ used, allowed, remaining: Math.max(0, allowed - used), daily_max: DISCUSSION_DAILY_MAX });
+  return 0;
+}
+
 /** 今日の次の事案 ID。番号は Room の信長の投稿から数える。 */
 async function cmdNextId() {
   const nobunaga = loadAgents().find((a) => a.key === 'nobunaga')?.ens?.toLowerCase();
@@ -450,11 +468,12 @@ async function main() {
     case 'recent': return cmdRecent(args);
     case 'brief': return cmdBrief(args);
     case 'next-id': return cmdNextId();
+    case 'quota': return cmdQuota();
     case 'cases': return cmdCases(args);
     case 'me': return cmdMe();
     case 'ack': return cmdAck(args);
     default:
-      throw new UsageError('使い方：post | check | brief | thread | get | recent | next-id | cases | me | ack（ファイル先頭の説明を参照）');
+      throw new UsageError('使い方：post | check | brief | thread | get | recent | next-id | quota | cases | me | ack（ファイル先頭の説明を参照）');
   }
 }
 
