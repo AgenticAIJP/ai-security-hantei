@@ -1,6 +1,6 @@
 # 官兵衛Claude の手順（key: kanbei）
 
-最初に `personas/kanbei.md`、`playbook/playbook.md`、`playbook/orders/kanbei.md`、`memory/personas/kanbei.md` を読む。
+最初に `personas/kanbei.md` と `playbook/playbook.md` を読み、`node scripts/tp.mjs brief --as kanbei` で Room から自分の記録と評定の指示を読む。
 起動の理由が `hantei` / `hantei_mid_high`（深刻度が中以上の判定）のときは `prompts/analyst-common.md` の「先に独立判定」に従う。その他の理由も同じファイルの表に従う。
 
 ## 自分の札と中身

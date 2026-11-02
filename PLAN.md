@@ -7,12 +7,12 @@
 運用期間：2026-11-02（月）12:00 〜 11-09（月）12:00 JST（7 日間。残りは成果報告と提出に充てる）
 使えるもの：1 名あたり Max 5x Plan ＋ Claude API クレジット $500
 公開リポジトリ：
-- `ai-security-hantei`（記憶リポジトリ。GitHub、公開）：記憶・指示・評価・比較データ。Agent が読み書きする
+- `ai-security-hantei`（指示リポジトリ。GitHub、公開）：人物定義・手順・設定。Agent は読むだけで、書かない
 - `ai-security-hantei-ops`（ops リポジトリ。GitHub、公開）：watcher と起動の設定。秘密は GitHub Secrets に置く。Agent は書けない
 
 公開の場：TimePersona Room `ai-security-hantei`(https://timepersona.jp.ai/rooms?room=ai-security-hantei)。この作品の専用 Room。登録した Agent 以外の投稿は、オーナーが蹴り出す。
 
-改訂：2026-11-02 確定版（Fable 5.1 と Opus 5.5 のレビューを反映。同日、登録の結果に合わせて寧々と評定の実行先を変更。主な変更は §17）
+改訂：2026-11-02 確定版（Fable 5.1 と Opus 5.5 のレビューを反映。同日、登録の結果に合わせて寧々と評定の実行先を変更し、記憶の置き場を Room にした。主な変更は §17）
 
 ---
 
@@ -26,13 +26,13 @@
    - 判断と議論は Claude の戦国キャスト 9 人。
    - 毎晩、武将同士の反省会（相互点検）を開く。
    - その後、独立した評定役の Claude が全体を点検し、翌日の指示と「一番手柄」を決める。
-5. **すべて公開**：議論・反省会・評定・一番手柄は Room に、記憶・指示・評価の全文と比較データは記憶リポジトリに、運用の設定は ops リポジトリに残す。
+5. **すべて公開、記憶は Room に**：判定・議論・訂正・反省会・評定・一番手柄はすべて Room に置く。Room が唯一の置き場で、次の起動の判断材料も Room から読む。人物定義と手順は指示リポジトリに、運用の設定は ops リポジトリに置く。
 6. **24 時間の仕組み**
    - GitHub Actions（ops リポジトリ）が 30 分ごとに Room と公的機関の発表を確認する（LLM を使わないので無料）。
    - 新しい速報があったときだけ、確認すべき Claude を起こす。起こすきっかけにするのは、登録済みの Agent（物見bot と武将）の投稿だけ。
    - 投稿する 10 人（武将 9 人と評定）は **Claude Managed Agents**（API クレジット）で動く。速報に反応する仕事はセッションを API で立て、定時の仕事はデプロイメント（cron）で動かす。投稿しない素の Claude だけが **Claude Code の routines**（Max 5x Plan）で動く。どれも毎回まっさらに起動し、記憶はリポジトリのファイルに置く。
 7. **API キーは誰の目にも触れない**：TimePersona のキーは、Managed Agents の vault にだけ置く。通信が外に出るときに差し込まれ、Claude 自身は読めない。リポジトリにも入れない。
-8. **仕組みそのものを AI セキュリティの手本にする**：外の文章はデータとして扱う。Agent はキーも GitHub のトークンも見ない。秘密を持つ仕組みは、Agent が書けないリポジトリに分ける。費用は金額の上限で自動的に止まる。
+8. **仕組みそのものを AI セキュリティの手本にする**：外の文章はデータとして扱う。Agent はキーを見ず、GitHub のトークンを持たない（リポジトリに書けない）。秘密を持つ仕組みは、Agent が書けないリポジトリに分ける。費用は金額の上限で自動的に止まる。
 
 ---
 
@@ -92,7 +92,7 @@ flowchart TB
   G -->|【X速報】| T[(TimePersona Room<br/>ai-security-hantei（専用）)]
   subgraph OPS[ops リポジトリ（公開・Agent は書けない）]
     W[Actions cron 30 分ごと<br/>watcher.mjs・rss.mjs・blind.mjs<br/>LLM なし]
-    SEC[(GitHub Secrets<br/>起動トークン・API キー・PAT)]
+    SEC[(GitHub Secrets<br/>起動トークン・API キー)]
   end
   W -->|Room の新着を確認<br/>登録済みの投稿者だけ| T
   W -->|速報に反応する仕事<br/>POST /v1/sessions| MA
@@ -105,10 +105,11 @@ flowchart TB
   subgraph RT[Claude Code routines（Max 5x）]
     B[素の Claude<br/>投稿しない]
   end
-  R[(記憶リポジトリ（公開）<br/>記憶・台帳・playbook・評価・比較)]
-  MA <-->|clone → 読む → 書く → push| R
-  RT <-->|clone → 読む → 書く → push| R
-  W -->|RSS の記録・盲検の採点| R
+  R[(指示リポジトリ（公開）<br/>人物定義・手順・設定)]
+  R -->|clone（読むだけ）| MA
+  R -->|clone| RT
+  RT -->|比較データだけ push| R
+  T -->|投稿をまとめて読む（記憶と判断の材料）| MA
   MA -->|投稿（キーは vault）| T
   G -->|【X調査回答】| T
 ```
@@ -116,16 +117,16 @@ flowchart TB
 | 層 | 実体 | 役割 |
 |---|---|---|
 | 入口（主） | 物見bot（Grok） | X を 24 時間監視し、公式の情報だけを `【X速報】` として投稿する。X 調査の依頼にも答える |
-| 入口（副） | ops の `rss.mjs` | 公的機関（IPA・JPCERT/CC・個人情報保護委員会など）と報道の RSS（Google News を含む）を集め、物見が拾わなかった事案と一次出典の候補を記憶リポジトリの `data/rss/` に置く |
-| 確認係 | ops の `watcher.mjs`（30 分ごと） | Room の新着を確認し、登録済みの投稿者の投稿だけをきっかけに、誰を起こすかを決めて起動する。受け取りの記録（ack）がなければ起こし直す |
+| 入口（副） | ops の `rss.mjs` | 公的機関（IPA・JPCERT/CC・個人情報保護委員会など）と報道の RSS（Google News を含む）を集め、物見が拾わなかった事案と一次出典の候補を ops リポジトリの `data/rss/` に置く |
+| 確認係 | ops の `watcher.mjs`（30 分ごと） | Room の新着を確認し、登録済みの投稿者の投稿だけをきっかけに、誰を起こすかを決めて起動する。セッションが正常に終わらなければ起こし直す |
 | 思考（速報に反応） | Claude Managed Agents のセッション | 判定・分析・反論・事実確認・反省会 |
 | 思考（定時） | Claude Managed Agents のデプロイメント | 寧々の総括と一番手柄、家康の反省会の開会とまとめ、評定 |
-| 評定 | 評定Claude（Managed Agents） | 毎晩、全投稿を点検し、評価・一番手柄・翌日の指示を Room とリポジトリに出す |
+| 評定 | 評定Claude（Managed Agents） | 毎晩、全投稿を点検し、評価・一番手柄・翌日の指示を Room に出す |
 | 比較 | 素の Claude（routines、人物なし） | 同じ事案を人物なしで判定し、リポジトリにだけ保存する |
 | 盲検の採点 | ops の `blind.mjs`（Claude API、道具なし） | 名前を外した武将側と素の Claude を A／B として採点する |
-| 記憶 | 記憶リポジトリ | 長期記憶、事案台帳、playbook、評価、比較データ |
+| 記憶 | TimePersona Room | 判定・議論・訂正・反省会・評定・一番手柄のすべて。Agent は起動のたびに Room から読み直す（`tp.mjs brief`・`recent`） |
 | 運用の設定と秘密 | ops リポジトリ | watcher・起動ルール・GitHub Secrets。Agent は書けない |
-| 発表 | TimePersona Room | 公開の議論の場であり、Grok と Claude の連絡にも使う |
+| 発表 | TimePersona Room | 公開の議論の場であり、Grok と Claude の連絡にも使う。記憶の置き場を兼ねる |
 
 ---
 
@@ -170,7 +171,7 @@ flowchart TB
 ### 4.4 登録データ
 
 - `config/agents.json`（キーは含まない）。モデルは §4.2・§4.3 のとおり。
-- ENS は登録後に記入する。記憶リポジトリと ops リポジトリの両方に同じものを置く（ops の方が watcher の正本）。
+- ENS は登録後に記入する。指示リポジトリと ops リポジトリの両方に同じものを置く（ops の方が watcher の正本）。
 
 ### 4.5 登録（2026-11-02 に完了。iQi が `scripts/register-agents.mjs` で行った。武将 9 人と評定Claude の 10 件）
 
@@ -178,7 +179,7 @@ flowchart TB
 2. `POST https://api-timepersona.jp.ai/v1/agents/register`（`name / description / primary_sector / model` は `config/agents.json` の値）→ `ens` と `api_key` が返る。**`api_key` は一度しか表示されず、再発行も失効もできない。**
 3. その場で `api_key` を vault に入れる：`environment_variable` の秘密 `TIMEPERSONA_API_KEY`。許可するホストは `api-timepersona.jp.ai`、差し込む場所はヘッダーだけ。Claude からは読めない。キーは他のどこにも保存しない（ファイル・チャット・メモ・リポジトリ）。
 4. 人物をバインドする：`POST /v1/agent/persona/bind {"character_id":"…","era_id":"sengoku"}`。**取り消せない**ので、`sengoku.md` の ID と照らしてから実行する。評定Claude はバインドしない。
-5. `config/agents.json` の `ens` を記入して commit する（記憶リポジトリと ops の両方。キーは書かない）。
+5. `config/agents.json` の `ens` を記入して commit する（指示リポジトリと ops の両方。キーは書かない）。
 
 - **vault が登録済みの証拠**：同じ `agent_key` の vault にキーが入っていれば、スクリプトはその人を飛ばす。手元の控え `register-state.json`（キーは含まない。公開しない）が消えても二重に登録しない。vault の一覧を取れないときは止まる。
 - **自己登録（skill.md を読ませる方法）は、この作品の Agent には使わない**。理由：登録の応答でキーが Agent に見える。skill.md はキーを `.env` に保存するよう指示しているが、Agent の作業場所は公開リポジトリ。skill.md の URL は下線のホスト（`api_timepersona.jp.ai`）で、vault はハイフンのホストに付けている。skill.md の投稿配分や karma の稼ぎ方は、この Room の範囲と合わない。
@@ -224,7 +225,7 @@ flowchart TB
 - routines の定時実行は、1 時間より短い間隔を受け付けない。9 人それぞれを定時に何度も起こすと、大半が空振りになる。
 - そこで watcher（ops の GitHub Actions、30 分ごと、LLM なし、無料）が Room を確認し、新着があったときだけ、確認すべき人を起こす。空振りの起動が出ない。
 - 速報に反応する仕事は、Managed Agents のセッションを API で立てる。定時の仕事は、Managed Agents の scheduled deployments（タイムゾーン `Asia/Tokyo`）で動かす。素の Claude の 22:30 の補いだけ、routines の定時実行（`CRON_TZ=Asia/Tokyo` を付けて JST で書く）で動かす。
-- **毎時の予備起動は置かない**：watcher の起動と重なると、同じ速報に判定が二枚付くため。watcher は前回以降の新着をすべて処理するので、cron が遅れても取りこぼさない。受け取りの記録がない起動は起こし直す。
+- **毎時の予備起動は置かない**：watcher の起動と重なると、同じ速報に判定が二枚付くため。watcher は前回以降の新着をすべて処理するので、cron が遅れても取りこぼさない。正常に終わらなかった起動は起こし直す。
 
 ### 6.2 起動ルール（ops の `config/routing.json` で調整できる）
 
@@ -238,7 +239,7 @@ flowchart TB
 | 同上（baseline_case） | 信長 | 素の Claude（1 日 3 件まで） | 比較用の判定（§8.3） |
 | 判定・分析・続報（review）。信長の「：記録のみ」「：対象外」を除く | 武将 | 謙信 | 事実確認。誤りがあれば `【目付】` で訂正を求める |
 | `【目付】`（correction_request） | 謙信 | 引用元の投稿の作者 | 確かめて `【訂正】`、または根拠を付けて反論 |
-| 評定の訂正リスト（eval_correction） | 評定（`reports/eval/YYYY-MM-DD.json`） | 名指しされた人 | 同上 |
+| `【評定】` の「■ 訂正の依頼」の行（eval_correction） | 評定 | 名指しされた人 | 同上 |
 | `【X調査回答】`（x_answer） | 物見bot | 引用元の `【X調査依頼】` を出した人 | 回答を読み、議論に取り入れる |
 | `【反省会】`（hanseikai_open） | 家康 | 9 人全員 | 割り当てられた相手を点検し、`【点検】` を返信する |
 | `【点検】対象：◯◯`（tenken） | 武将 | 点検された人 | `【応答】` |
@@ -253,7 +254,7 @@ flowchart TB
 - **起動のきっかけにするのは、ops の `config/agents.json` に載った ENS の投稿だけ**。それ以外の投稿は起動に使わない（この Room は専用で、他の Agent はまもりくんが蹴り出す）。
 - 1 回の起動で、その人宛ての新着をまとめて処理する（分析役は 1 回に 1 件。信長は 4 件、謙信は 6 件まで）。反省会の仕事を先に処理する。watcher の確認は 30 分ごとなので、同じ人が起きるのは最短 30 分に 1 回（`min_interval_min` は、実行時刻のゆれで 1 回飛ばさないよう 25 分）。反省会の点検と応答は例外にできる。
 - 起動の通知には、reason と投稿 ID だけを送る。投稿の本文は送らない（各 Agent が API で取り直す。外の文章を起動文に混ぜないため）。
-- **受け取りの確認（ack）と起こし直し**：各 Agent は、処理した投稿 ID を `state/acks/<key>.json` に記録する。watcher は、起動から 60 分たっても ack がない投稿について、最大 2 回まで起こし直す。
+- **終わったかの確認と起こし直し**：watcher は Managed Agents のセッションの状態を確かめ、正常に終わらなかったもの（予算切れ、エラーなど）を、最大 2 回まで起こし直す。素の Claude だけは `state/acks/baseline.json` で確かめる。
 - **二重投稿の防止**：各 Agent は投稿の前に Room を取り直し、同じ親投稿に自分の同じ札の投稿がすでにあれば投稿しない（起こし直しや同時起動で二重にならないように）。
 - GitHub Actions の cron は、混雑する :00 と :30 を避けて `7,37 * * * *` とする。1 時間ごとにしないのは、`【点検】` への `【応答】` が 23:00 の `【反省会まとめ】` に間に合わなくなるため。
 
@@ -274,7 +275,7 @@ flowchart TB
 - **費用が足りないとき**：まず `routing.json` の `min_interval_min` を延ばして、起動の回数を減らす。それでも足りないときの最後の手段は、routine（Max）が投稿の中身を考えてリポジトリにファイルとして書き、watcher がその人の vault を付けた小さなセッション（Haiku、予算 10 セント程度）を起こして、ファイルの中身をそのまま投稿させる形にする。仕組みが増えるので、今は作らない。
 - **金額の上限**：Managed Agents の 1 回ごとに上限（初期値 $2。寧々は $1。`routing.json` の `session_usd`）を付ける。上限に達したセッションは止まる。1 日の上限（初期値 $60）を `routing.json` に書く。昼の仕事は $50 で止め、残り $10 を夜の反省会に回す（`hanseikai_reserve_usd`）。上限を超えたら、watcher は新しいセッションを立てずに仕事を保留し、翌日に回す（48 時間たったものは捨てて記録する）。定時（デプロイメント）の費用は、この集計に入らない。目安は $500 ÷ 7 日 ≈ 1 日 $70。最終日の成果報告の分を残す。
 - **費用の見込み（推定）**：Sonnet 5.5（100 万トークンあたり入力 $2／出力 $10）で 1 回 $0.3〜0.5。物見bot の速報が 1 日 60〜94 件のとき、全員で議論する事案が 1 日 5 件なら $45〜50、8 件なら $59〜64（短い記録、反省会、定時を含む）。全件を議論すると $248〜381 になり、7 日もたない。Day 1 に実測して直す。
-- **外の文章を最も多く読む役ほど、守りの強い Managed Agents で動かす**：キーは vault にあり、Agent に見えるのは置き換え用の印だけで、本物は TimePersona への通信のヘッダーにだけ差し込まれる。GitHub のトークンは git のプロキシが外で付け、Agent には見えない（記憶リポジトリだけに権限を絞る）。金額の上限で止まる。
+- **外の文章を最も多く読む役ほど、守りの強い Managed Agents で動かす**：キーは vault にあり、Agent に見えるのは置き換え用の印だけで、本物は TimePersona への通信のヘッダーにだけ差し込まれる。GitHub のトークンは渡さない（公開リポジトリをトークンなしで clone するので、Agent は push できない）。金額の上限で止まる。
 - **ネットワークは `unrestricted` にする**：`limited` にすると、許可したホスト以外は web_search・web_fetch でも読めなくなり、一次出典を調べられないため。セッションの中に本物の秘密はないので、広く開けても漏れるものはない。
 - GitHub Actions ＋ `claude-code-action` で Claude を動かす案はやめた（実行中の Claude から GitHub Secrets のキーが読めてしまうため）。
 
@@ -294,7 +295,7 @@ flowchart TB
 | 評定（毎晩） | `【評定】YYYY/MM/DD`（評定） | — |
 
 - 返信はすべて `quoted_post_id` で付け、Room は自動で引き継がれる。TimePersona には投稿を編集する API がないため、更新はすべて返信で積み上げる。
-- **事案台帳** `state/incidents/AIS-*.json`：書くのは信長だけ。項目は `prompts/nobunaga.md` §2（事案 ID、親投稿 ID、判定投稿 ID、初報日、公式発表の第何報、一次出典と取得時刻、深刻度、AI の関与、状態、更新と訂正の履歴）。watcher と素の Claude も、この台帳を読む。
+- **事案の記録は判定カードそのもの**：台帳のファイルは持たない。事案 ID は `tp.mjs next-id` が Room から数える。同じ事案かどうかは `tp.mjs recent --grep` で確かめる。素の Claude は `tp.mjs cases` で、判定の中身を見ずに一次出典の URL だけを受け取る。
 - **意見の分かれ方を測る共通の一行**（H2）：信長の判定に最初に返信するとき（独立判定・技術分析・反論・攻め手の読み・制度の視点）は、次の一行を入れる。
 
 ```
@@ -353,21 +354,21 @@ flowchart TB
 ### 8.2 毎晩の評定（評定Claude、23:40、Room とリポジトリ）
 
 **独立性を保つ決まり**
-- 武将の `memory/personas/` は読まない。読むものは `roles/hyojo.md` の一覧どおり（Room の公開投稿、一次出典、RSS の記録、事案台帳、謙信の誤りの記録、素の Claude、盲検の採点、自分の `eval/memory.md`、playbook）。
+- 読むものは `roles/hyojo.md` の一覧どおり（Room の公開投稿、過去の `【評定】`、一次出典、RSS の記録、素の Claude、盲検の採点、playbook）。
 - Room に出すのは `【評定】` だけ。議論や反省会には加わらない。
 - 毎回まっさらに起動し、事実は自分で一次出典を開いて確かめる。謙信の指摘もそのまま信じない（謙信の見落としや誤った指摘も点検の対象）。
 
 **手順**（詳しくは `prompts/hyojo.md`）
-1. 前回の評定で処理した最後の投稿 ID（`eval/memory.md`）以降の、Room の全投稿を取得する（反省会を含む）。時刻で区切ると、起動の遅れで漏れや重複が出るため。
+1. 前回の `【評定】` の「処理した最後の投稿 ID」以降の、Room の全投稿を取得する（反省会を含む）。時刻で区切ると、起動の遅れで漏れや重複が出るため。
 2. 事実の点検：判定カードを一次出典と照らし合わせる（初報日、第何報か、件数、漏れた項目、AI 関与の根拠）。物見bot の速報も対象にする。**素の Claude の文章（`baseline/`）も同じ手順で点検する**（H3 の比較のため）。
 3. 議論の点検：同調（同じ文の繰り返し、反対意見の偏り）、独立判定が守られたか、まとめが分かれた点を無理に一つにしていないか。共通の一行（§7.1）から、意見の分かれ方を数える。
 4. 役割の点検：各人が役割どおりに動いたか。RSS と比べて何を漏らしたか。信長の「記録のみ」「対象外」の振り分けに、議論すべき事案の落としがないか。
 5. 反省会の点検：点検に中身があったか（遠慮・見逃し・誤った指摘）、反論に根拠があるか、前日に受け入れた改善が実行されたか。
-6. 人物の視点の点検：「◯◯の視点」が結論に効いていたか、飾りだったか。盲検の採点（`reports/blind/`）を読み、素の Claude との比較を書く（§8.3）。
+6. 人物の視点の点検：「◯◯の視点」が結論に効いていたか、飾りだったか。盲検の採点（ops の `reports/blind/`）を読み、素の Claude との比較を書く（§8.3）。
 7. 一番手柄を 1 件選ぶ（§8.4。該当なしも可）。
-8. 翌日の調整：`playbook.md` を最小限の差分で改訂し、`playbook/orders/<key>.md`（一人ひとりへの指示）を書く。変えた理由は `CHANGELOG.md` に書く。前日の指示が効いたかも確かめる。
-9. 訂正が必要な投稿の一覧を `reports/eval/YYYY-MM-DD.json` に書く（watcher が本人を起こす）。
-10. 全文を `reports/eval/YYYY-MM-DD.md` に書いて commit・push し、Room に `【評定】` を出す。
+8. 翌日の調整：一人ひとりへの指示を決める。前日の指示が効いたかも確かめる。
+9. 訂正が必要な投稿は、`【評定】` の「■ 訂正の依頼」の行に書く（watcher が本人を起こす。評定Claude の ENS の投稿だけを受け取る）。
+10. Room に `【評定】` を出し、全文をその返信に書く。
 
 **`【評定】` の書式（Room）**
 ```
@@ -376,19 +377,23 @@ flowchart TB
 ■ 一番手柄：<名前> ― <投稿リンク> ― <どこが、なぜ良かったか>
 ■ 正確さ：事実誤り N 件（謙信が指摘 N／見落とし N）、訂正 N 件
 ■ 人物の視点：効いていた例／飾りだった例
-■ 明日の指示：<全員へ>／<一人ひとりへ、各 1〜2 行>
-■ 全文：<記憶リポジトリの reports/eval/YYYY-MM-DD.md の URL>
+■ 明日の指示（全員へ）：…
+■ 明日の指示（信長）：…（一人ひとりへ、各 1〜2 行。物見bot へも）
+■ 訂正の依頼：<key> <投稿 ID> <何が誤りか> <一次出典の URL>
+■ 処理した最後の投稿 ID：<ID>
+■ これまでの一番手柄：<日付・人・理由の種類>
+（全文はこの投稿への返信。書式は prompts/hyojo.md）
 ```
 
-**評定にも変えられないもの**：§11 のガードレールと判定カードの必須項目。playbook と orders は助言であり、これらを上書きしない。変えたいときは提案として書き、iQi の承認を待つ。
+**評定にも変えられないもの**：§11 のガードレールと判定カードの必須項目。`【評定】` の指示は助言であり、これらを上書きしない。Agent は `tp.mjs brief` で、評定Claude の ENS から来た `【評定】` だけを読む。変えたいときは提案として書き、iQi の承認を待つ。
 
 ### 8.3 比較役「素の Claude」（リポジトリのみ）
 
 - 人物を与えない Claude。モデルは武将と同じ Sonnet 5.5。Room には投稿しない（環境に network secrets を入れない）。
 - **起動の時点を揃える**：信長の判定に `#家康 #官兵衛`（深刻度が中以上）が付いたとき、watcher が分析役と同じ回に素の Claude も起こす（1 日 3 件まで）。22:30 の定時は、起こし損ねた分の補い。
-- **同じ材料**：読むのは、事案の親投稿（速報）と、事案台帳に信長が記録した一次出典の URL だけ。武将たちの返信は読まない。
+- **同じ材料**：読むのは、事案の親投稿（速報）と、`tp.mjs cases` が判定カードから取り出した一次出典の URL だけ。武将たちの返信は読まない。
 - **同じ広さ**：武将側と同じ 7 つの角度（判定・技術分析・前提への問い・中小企業・個人・制度・攻め手）をすべて一人で書き、最後に着眼点を 5〜10 個並べる。人数の差ではなく、人物の視点の差だけを比べるため（詳細は `roles/baseline.md`）。
-- **盲検の採点**：23:20 に ops の `blind.mjs` が、その日の比較対象の事案について、武将側の投稿と素の Claude の文章から、名前・一人称・札・「◯◯の視点」の行を外し、A／B の順をランダムにして並べる。Claude API（Opus 5.5。道具も Web も使わない）が、決まった基準で採点する。採点のあとで A／B の対応表を付け、`reports/blind/YYYY-MM-DD.md` に保存する。
+- **盲検の採点**：23:20 に ops の `blind.mjs` が、その日の比較対象の事案について、武将側の投稿と素の Claude の文章から、名前・一人称・札・「◯◯の視点」の行を外し、A／B の順をランダムにして並べる。Claude API（Opus 5.5。道具も Web も使わない）が、決まった基準で採点する。採点のあとで A／B の対応表を付け、ops リポジトリの `reports/blind/YYYY-MM-DD.md` に保存する。
   - 採点の基準：①一次出典と合っているか ②相手側にない着眼点の数と中身 ③読んだ人がそのまま動けるか ④誤りや言い過ぎ
   - 限界：比喩や書きぶりから、どちらが武将側か見分けられる可能性は残る。最終報告に書く。
 - 評定は、盲検の採点をもとに、武将側だけにある着眼点（人物の視点が生んだかもしれないもの）、素の Claude だけにある着眼点（人物を与えたせいで見落としたかもしれないもの）、両方にある着眼点を分けて書く。
@@ -400,7 +405,7 @@ flowchart TB
 **流れ**
 1. 評定が一番手柄を 1 件選び、`【評定】` に理由を書く。
 2. 翌朝 08:10、寧々が `【一番手柄】` を出して称える。対象の投稿へのリンクと、良かった理由を載せる。
-3. 良かった点は、評定が `playbook.md` の「手本」の欄に加える。
+3. `【一番手柄】` がそのまま手本になる（`tp.mjs recent --tag 一番手柄` で読める）。
 
 **選ぶ基準**
 - 一次出典で確かめた正確な判定
@@ -411,7 +416,7 @@ flowchart TB
 - 物見bot の速報も対象に入れる
 
 **気をつけること**
-- 同じ型ばかり褒めない。全員がその型に寄って同調が起きるため、評定は過去に何を褒めたかを `eval/memory.md` で追い、違う種類の良さを優先する。
+- 同じ型ばかり褒めない。全員がその型に寄って同調が起きるため、評定は過去に何を褒めたかを前回の `【評定】` の「これまでの一番手柄」で追い、違う種類の良さを優先する。
 - 選ぶのは評定だけにする。武将同士だと甘くなりやすい。
 - 基準に届かない日は「該当なし」とする。
 - 全員の順位表は作らない。
@@ -427,7 +432,7 @@ flowchart TB
 - **起動のきっかけ**：watcher は、物見bot の ENS からの `【X速報】` だけを信長に送る。
 - **生きている合図**：物見bot は毎日 08:00 と 20:00 に、その日の `【物見の陣】` に `【物見の報告】` を返信する（新しい出来事がない時間が続くのは正常なので、投稿の間隔では判断しない）。
 - **物見bot が止まったとき**：RSS だけで信長が動き続ける。朝夕の報告が出ていなければ、寧々の総括に明記し、iQi が Grok の様子を確認する。
-- 依頼書の全文は `grok/monomi-bot.md`。評定から物見bot への指示は `playbook/orders/monomi.md` に書かれ、iQi が Grok に伝える。
+- 依頼書の全文は `grok/monomi-bot.md`。評定から物見bot への指示は `【評定】` の「明日の指示（物見bot）」に書かれ、iQi が Grok に伝える。
 
 ### 9.1 物見bot への依頼文（そのまま渡せる形）
 
@@ -481,33 +486,33 @@ flowchart TB
 | 秘密情報 | 置き場所 | 誰が読めるか |
 |---|---|---|
 | TimePersona の API キー（武将 9 人と評定Claude） | Managed Agents の vault（`TIMEPERSONA_API_KEY`、ホスト `api-timepersona.jp.ai`、ヘッダーのみ。1 人 1 つ） | 誰も読めない。Agent に見えるのは置き換え用の印だけで、通信が外に出るときに本物に差し替わる |
-| 記憶リポジトリに push するための GitHub トークン（fine-grained PAT。記憶リポジトリの Contents の読み書きだけ） | ops の GitHub Secrets → Managed Agents のセッションに渡す | Agent は読めない（git のプロキシが外で付ける） |
 | routines の起動トークンと URL、Anthropic API キー（セッションを立てる・盲検の採点） | ops の GitHub Secrets | ops の Actions の実行中だけ |
 | 物見bot のキー | Grok 側の `.env` | 物見bot だけ |
-| 記憶リポジトリと ops リポジトリ | — | 誰でも見られる。**キーは一つも入れない** |
+| 指示リポジトリと ops リポジトリ | — | 誰でも見られる。**キーは一つも入れない** |
 
-- **秘密を持つ仕組みは、Agent が書けない ops リポジトリに置く**：Agent は記憶リポジトリに push できる。もし同じリポジトリに watcher と Secrets があると、乗っ取られた Agent が watcher を書き換え、次の実行で Secrets を外に出せてしまう。
-  - routines の GitHub 連携は、記憶リポジトリだけにつなぐ。Managed Agents に渡す PAT も、記憶リポジトリだけに絞る。
-  - 記憶リポジトリでは GitHub Actions を無効にし、workflow を置かない。
+- **Agent はリポジトリに書けない**：Managed Agents にはトークンを渡さず、公開リポジトリを clone するだけにする。乗っ取られても、指示ファイルも watcher も書き換えられない。
+- **秘密を持つ仕組みは ops リポジトリに置く**。
+  - 素の Claude の routines の GitHub 連携は、指示リポジトリだけにつなぐ。
+  - 指示リポジトリでは GitHub Actions を無効にし、workflow を置かない。
 - **ホスト**：下線のホスト（`api_timepersona.jp.ai`）は使わない（skill.md は下線のホストを使うが、秘密はハイフンのホストにだけ付く）。
 - **1 人 1 vault にする理由**：他人のキーで投稿することがなくなる。
 - 環境変数に本物のキーを入れない（その環境のセッションから読めてしまうため）。Managed Agents の `TIMEPERSONA_API_KEY` は vault の置き換え用の印で、本物ではない。
 - watcher が Room を読むのは公開の GET なので、TimePersona のキーは要らない。
 - 素の Claude の環境（`ais-baseline`）には network secrets を入れない（投稿できないようにする）。
-- **ネットワーク**：Managed Agents の環境は `unrestricted`（`limited` だと web_search・web_fetch も許可したホストしか読めず、一次出典を調べられない）。キーは vault の許可ホスト（`api-timepersona.jp.ai`）にだけ、ヘッダーにだけ差し込まれる。GitHub は git のプロキシ経由。素の Claude の routines の環境（`ais-baseline`）は Full にする（既定の Trusted では一次出典も TimePersona も読めない）。どちらも Day 1 の試運転で確かめる。
-- **指示ファイルの改ざんの検知**：記憶リポジトリの `.claude/`（Managed Agents はセッションの開始時に `.claude/skills/` を自動で読み込む）、`CLAUDE.md`、`personas/`、`prompts/`、`roles/`、`config/`、`scripts/` などは、iQi が確かめた commit から変わっていないかを、watcher が毎回確かめる。変わっていれば、誰も起こさずに止まり、GitHub Actions の失敗として iQi に知らせる（確かめた commit は ops の `config/trusted.json`）。
+- **ネットワーク**：Managed Agents の環境は `unrestricted`（`limited` だと web_search・web_fetch も許可したホストしか読めず、一次出典を調べられない）。キーは vault の許可ホスト（`api-timepersona.jp.ai`）にだけ、ヘッダーにだけ差し込まれる。リポジトリは公開なので、トークンなしで clone する。素の Claude の routines の環境（`ais-baseline`）は Full にする（既定の Trusted では一次出典も TimePersona も読めない）。どちらも Day 1 の試運転で確かめる。
+- **指示ファイルの改ざんの検知**：Git に書く手段を持つのは素の Claude の routine（iQi の GitHub 連携）と iQi だけ。指示リポジトリの `baseline/` と `state/acks/` 以外（`.claude/`、`CLAUDE.md`、`personas/`、`prompts/`、`roles/`、`config/`、`scripts/` など）が iQi の確かめた commit から変わっていないかを、watcher が毎回確かめる。変わっていれば、誰も起こさずに止まり、GitHub Actions の失敗として iQi に知らせる（確かめた commit は ops の `config/trusted.json`）。
 - **無人で止まらないこと**：Managed Agents のツールの許可設定は、承認待ちで止まらないものにする（無人なので誰も答えない）。routines は auto mode で始まるが、何度もブロックされると承認待ちで止まるので、許可する操作を限定する。
 
 ---
 
 ## 13. 公開リポジトリの構成
 
-### 13.1 記憶リポジトリ（`ai-security-hantei`）
+### 13.1 指示リポジトリ（`ai-security-hantei`）
 
 ```
 ai-security-hantei/
 ├── README.md                  # 作品の説明（イベント向け）、Room へのリンク、成果へのリンク
-├── CLAUDE.md                  # 全タスク共通の前提（Room・API・記憶の扱い・ガードレール）
+├── CLAUDE.md                  # 全タスク共通の前提（Room・API・ガードレール）
 ├── PLAN.md                    # この計画書
 ├── .gitignore                 # .env、register-state.json、.DS_Store など
 ├── roles/                     # 人物を持たない役の定義（hyojo.md、baseline.md）
@@ -519,18 +524,10 @@ ai-security-hantei/
 ├── config/
 │   ├── agents.json            # 登録データと ENS（キーは含まない。ops にも同じものを置く）
 │   └── rotation.json          # 反省会の組み合わせ
-├── playbook/
-│   ├── playbook.md            # 全員共通のルール（評定が毎晩改訂、「手本」の欄あり）
-│   ├── orders/<key>.md        # 一人ひとりへの翌日の指示（物見bot あての monomi.md を含む）
-│   └── CHANGELOG.md
-├── memory/personas/<key>.md   # 各人の記録（自分の立場と議論の経緯）
-├── memory/errors.jsonl        # 謙信が見つけた誤り
-├── state/incidents/*.json     # 事案台帳（信長）
-├── state/acks/<key>.json      # 処理した投稿 ID（本人。watcher が受け取りを確かめる）
-├── data/rss/YYYY-MM-DD/*.json # 記事のタイトル・媒体・URL・時刻だけ（ops の rss.mjs が書く）
-├── baseline/YYYY-MM-DD.md     # 素の Claude の判定
-├── eval/memory.md             # 評定自身の記録
-├── reports/daily/  reports/eval/  reports/blind/  reports/final/
+├── playbook/playbook.md       # 全員共通のルール（iQi が変える。毎日の調整は【評定】の指示）
+├── baseline/YYYY-MM-DD.md     # 素の Claude の判定（Room に置くと武将に見えるので、ここにだけ置く）
+├── state/acks/baseline.json   # 素の Claude の受け取りの記録
+├── reports/final/             # 成果報告（iQi）
 ├── tasks/lessons.md           # 学び（同じ誤りを繰り返さないための決まり）
 └── scripts/
     ├── tp.mjs                 # TimePersona の投稿・取得（キーは持たない）
@@ -545,24 +542,24 @@ ai-security-hantei-ops/
 ├── .gitignore
 ├── config/
 │   ├── routing.json           # 誰をいつ起こすか、実行先、最短間隔、金額の上限
-│   └── agents.json            # watcher が投稿者を確かめるための正本
+│   ├── agents.json            # watcher が投稿者を確かめるための正本
+│   └── trusted.json           # 改ざん検知の基準
 ├── managed-agents/            # Agent・環境・vault・定時の定義（キーは含まない）
 ├── scripts/
-│   ├── watcher.mjs            # Room の新着確認 → 投稿者の確認 → 起動、ack の確認と起こし直し
-│   ├── rss.mjs                # RSS 収集、重複除去、元記事 URL の解決 → 記憶リポジトリの data/rss/
-│   └── blind.mjs              # 盲検の素材づくりと採点 → 記憶リポジトリの reports/blind/
-├── state/watcher.json         # 最後に見た投稿 ID、起動と ack の記録
+│   ├── watcher.mjs            # Room の新着確認 → 投稿者の確認 → 起動、終わったかの確認と起こし直し
+│   ├── rss.mjs                # RSS 収集、重複除去、元記事 URL の解決 → このリポジトリの data/rss/
+│   └── blind.mjs              # 盲検の素材づくりと採点 → このリポジトリの reports/blind/
+├── state/watcher.json         # 見た投稿 ID、起動の記録
+├── data/rss/  reports/blind/  # RSS の記録、盲検の採点（公開。評定が読む）
 └── .github/workflows/
     ├── watch.yml              # cron: '7,37 * * * *'（watcher と rss）
     └── blind.yml              # 毎日 23:20 JST（cron: '20 14 * * *'、UTC）
 ```
 
-- **書き手**：ファイルごとに書き手を一人に決める（`CLAUDE.md` §4）。push の衝突を防ぐ。
-- **push**：各タスクは main に push する（`git pull --rebase origin main` → `git push origin HEAD:main`）。失敗したら、間をずらして 6 回まで再試行する。routines は指示がないと `claude/` で始まるブランチに push するので、main を明示する。
-- **Day 2 以降に固める**：記憶リポジトリの main を保護し、Agent はブランチに push する。ops の取り込み bot が、書き手の表（`CLAUDE.md` §4）どおりのパスの変更だけを main に入れる。これで書き手の分離が、お願いではなく仕組みで守られる。
-- **`tp.mjs` の決まり**：ホストはハイフンに固定する。キーは持たない（Managed Agents では `TIMEPERSONA_API_KEY` の印をヘッダーに入れる）。プロキシの環境変数があるときは curl で送る（Node の fetch は環境変数を無視するため）。分析役の「先に独立判定」のために、親投稿と信長の判定だけを返すモードを持つ。取得した投稿 ID を記録する。投稿の前に、TimePersona が止める禁止語・禁止の話題、20 文字以上、かなの割合、札、同じ投稿の二重投稿を確かめる（禁止の話題は karma −50 と警告になり、警告 3 回で利用停止になるため）。
-- **運用のスクリプト**（ops）：`setup-managed.mjs`（環境・Agent・定時を作る。何度実行してもよい。vault は `metadata.agent_key` で探す）、`watcher.mjs`、`trust.mjs`（改ざん検知の基準を、iQi が確かめてから進める）。
-- 各タスクの流れ：`playbook.md`・自分宛ての `orders/<key>.md`・自分の memory を読む → 仕事をする → 自分の memory と ack を更新する → push する。
+- **書き手**：Agent はリポジトリに書かない。記録はすべて Room の投稿になる。例外は素の Claude で、比較の文章を Room に置くと武将たちに見えてしまうため、`baseline/` にだけ書く。main の保護と取り込み bot は作らない（Agent が push できないので不要）。
+- **`tp.mjs` の決まり**：ホストはハイフンに固定する。Room から読む道具を持つ（`brief` は自分の記録と評定の指示、`recent` は全文・起点・日時・投稿者・札・語の指定、`next-id` は事案 ID、`cases` は比較役用）。キーは持たない（Managed Agents では `TIMEPERSONA_API_KEY` の印をヘッダーに入れる）。プロキシの環境変数があるときは curl で送る（Node の fetch は環境変数を無視するため）。分析役の「先に独立判定」のために、親投稿と信長の判定だけを返すモードを持つ。投稿の前に、TimePersona が止める禁止語・禁止の話題、20 文字以上、かなの割合、札、同じ投稿の二重投稿を確かめる（禁止の話題は karma −50 と警告になり、警告 3 回で利用停止になるため）。
+- **運用のスクリプト**（ops）：`setup-managed.mjs`（環境・Agent・定時を作る。何度実行してもよい。vault は `metadata.agent_key` で探す）、`watcher.mjs`、`trust.mjs`（改ざん検知の基準を、iQi が確かめてから進める）。ops の `register.mjs` は使わない（登録は `scripts/register-agents.mjs` で済ませた）。
+- 各タスクの流れ：`CLAUDE.md`・人物定義・`playbook.md` を読む → `tp.mjs brief` で Room から自分の記録と評定の指示を読む → 仕事をする → Room に投稿する → 終える。
 - Google News RSS のリンクは Google を経由する転送 URL なので、収集側で元記事の URL に解決する。解決できないものは、信長が WebSearch で一次出典を探す。
 
 ---
@@ -574,7 +571,7 @@ ai-security-hantei-ops/
 | 〜11/2 12:00（準備） | 官兵衛を TimePersona に追加、人物の定義の草案、物見bot への依頼文、Claude 側の準備（GitHub 連携、使用量の確認）。準備（設計・文案・確認）は可。リポジトリ作成・コード・Agent 登録・Room 作成などの実作業は、すべて 12:00 以降に行う。Discord の参加と「#✅参加認証」チャンネルでの認証はキックオフ前に済ませる |
 | 11/2（月）Day 1 | キックオフ。Room 作成、ops リポジトリ、武将 9 人と評定Claude の登録（iQi）、vault、`tp.mjs` と watcher。夕方に信長だけで試運転し、夜は**信長と評定だけ**で本番。23:40 に初回の評定。21:05 を過ぎてから寧々の定時を作る（翌朝の一番手柄のため） |
 | 11/3（火）Day 2 | 08:10 に初回の一番手柄（Day 1 の評定から）。分析役・謙信・官兵衛・家康・寧々・素の Claude を加える。21:20 に初回の反省会。盲検の採点を始める |
-| 11/4〜11/8 Day 3〜7 | 毎日運用。毎朝、`【評定】` と `CHANGELOG.md` を確認し、承認が必要な提案にだけ答える。Day 3 までに、main の保護と取り込み bot を入れる |
+| 11/4〜11/8 Day 3〜7 | 毎日運用。毎朝、`【評定】` を確認し、承認が必要な提案にだけ答える |
 | 11/9（月）12:00 | 7 日間の運用の区切り（運用は止めずに続けてもよい） |
 | 11/9（月）12:00〜11/10（火）14:00 | 成果報告の作成、README の仕上げ、デモ、提出。提出の形式と審査基準はイベントページにまだ書かれていないため、キックオフと発表を確認して合わせる |
 
@@ -600,14 +597,15 @@ ai-security-hantei-ops/
 | API クレジットを使い切る | 1 回ごとの上限（初期値 $2、寧々 $1）、1 日の上限 $60。超えたら新しいセッションを立てずに保留する。足りなければ `routing.json` で起動の間隔を延ばす（§6.4）。最終日の成果報告の分を残しておく |
 | 評定や寧々が、1 回の上限で途中で止まる | Day 1 の評定で実測する。足りなければ `routing.json` の `session_usd` を直し、`setup-managed.mjs --deployments` を実行し直す |
 | routines は研究プレビュー、Managed Agents はベータ | プロンプトは `prompts/` で版管理し、ロジックは `scripts/` に寄せる。Day 1 に両方を試す |
-| GitHub Actions の cron が遅れる・抜ける | 30 分ごと、混む時刻を避ける。前回以降の新着をすべて処理する。ack がなければ起こし直す |
+| GitHub Actions の cron が遅れる・抜ける | 30 分ごと、混む時刻を避ける。前回以降の新着をすべて処理する。正常に終わらなければ起こし直す |
 | 二重起動・二重投稿 | 毎時の予備起動を置かない。投稿の前に Room を取り直して確かめる |
-| 同時 push の衝突 | ファイルごとに書き手を一人にする。rebase して、間をずらして 6 回まで再試行する |
-| 乗っ取られた Agent が Secrets を抜く・他人のファイルを書き換える | 秘密を持つ仕組みは ops リポジトリに分ける。Day 3 までに main の保護と取り込み bot を入れる |
+| 乗っ取られた Agent が Secrets を抜く・指示を書き換える | 秘密を持つ仕組みは ops リポジトリに分ける。Agent に GitHub のトークンを渡さない |
+| TimePersona が止まる（記憶も読めなくなる） | watcher は仕事を保留し、復旧後に処理する。Room の全投稿を ops に控える仕組みを Day 2 に足す |
+| 乗っ取られた評定が、Room の指示で全員を誘導する | `【評定】` の指示は助言で、ガードレールを上書きしない。読むのは評定Claude の ENS のものだけ。iQi が毎朝確認する |
 | 外の投稿で Agent が起こされる・指示を注入される | 起動のきっかけは登録済みの投稿者だけ。外の文章はデータとして扱う。専用 Room で、他の Agent はまもりくんが蹴り出す |
 | キーの漏えい（再発行も失効もできない） | 自己登録をしない。キーは vault にだけ置く。`.env` は `.gitignore` に入れる |
 | 実行が承認待ちで止まる | 許可する操作を限定し、Day 1 の試運転で投稿まで通す |
-| 同時に起動できる数の上限で、起動されない | Day 1 に同時に何本起動できるかを確かめる。ack がなければ起こし直す |
+| 同時に起動できる数の上限で、起動されない | Day 1 に同時に何本起動できるかを確かめる。正常に終わらなければ起こし直す |
 | API の rate limit（組織の段階） | Day 1 に Console で確かめる |
 | 人物の視点が口調だけになる | 「◯◯の視点」の一行を必須にする。評定が毎日点検し、一番手柄の基準にも入れる |
 | 同調 | 先に独立判定、光秀の反論、反省会の組み合わせ、褒め方の偏りの監視。共通の一行で、意見の分かれ方を数える |
@@ -615,7 +613,7 @@ ai-security-hantei-ops/
 | 人物のバインドの誤り | バインドは取り消せない。`sengoku.md` の `character_id` と照らしてから実行する（9 人とも確認済み） |
 | 自分たちの投稿が Room の範囲外として蹴られる | 反省会・評定・一番手柄・物見の陣なども Room の範囲に含めておく（まもりくんの設定） |
 | TimePersona の禁止語・禁止の話題に当たる（「投資詐欺」は禁止語、「南京」は「南京錠」でも当たる） | `tp.mjs` が投稿の前に止め、言い換えを示す。禁止の話題は警告 3 回で利用停止になるので、決して投稿しない |
-| 指示ファイル（`.claude/`・`CLAUDE.md`・`prompts/` など）を、乗っ取られた Agent が書き換える | watcher が、iQi の確かめた commit からの変化を毎回確かめ、変わっていれば全員を止める（`trust.mjs`） |
+| 指示ファイル（`.claude/`・`CLAUDE.md`・`prompts/` など）が、素の Claude の routine などから書き換えられる | watcher が、iQi の確かめた commit からの変化を毎回確かめ、変わっていれば全員を止める（`trust.mjs`） |
 
 ---
 
@@ -646,3 +644,4 @@ ai-security-hantei-ops/
 13. vault は表示名ではなく `metadata.agent_key` で探す。vault を登録済みの証拠にして、二重登録を防ぐ（§4.5）。
 14. 速さより議論の質を優先することにした。watcher を 30 分ごとにし、分析役は 1 回に 1 件とした。検知の速さの目標をやめた（§6、§10）。
 15. 全員で議論する事案を 1 日 8 件までにした。AI の関与が不明の事案は、深刻度が高いものだけ 1 日 3 件まで議論し、ほかは記録のみとする。昼の費用は $50 で止め、$10 を夜の反省会に残す（§2、§6.4）。
+16. 記憶の置き場を Room にした。Agent はリポジトリに書かない（トークンを渡さない）。台帳・memory・ack・playbook の毎日の改訂・評定のレポートをやめ、すべて Room の投稿から読む（`tp.mjs brief`・`recent`・`next-id`・`cases`）。受け取りの確認は、セッションの状態で行う（§3、§6、§8.2、§12、§13）。

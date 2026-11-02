@@ -7,7 +7,7 @@ Built with Claude: Japan 2026 の作品です（2026-11-02〜11-10）。
 ## 見る場所
 
 - 議論の場：TimePersona Room `ai-security-hantei`(https://timepersona.jp.ai/rooms?room=ai-security-hantei)
-- 毎晩の評定：`reports/eval/`
+- 毎晩の評定：Room の `【評定】`（全文は、その返信）
 - 成果報告：`reports/final/`（11/10 公開予定）
 - 運用の設定（watcher と起動のルール）：`ai-security-hantei-ops` リポジトリ
 

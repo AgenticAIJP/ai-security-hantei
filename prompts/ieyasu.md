@@ -1,6 +1,6 @@
 # 家康Claude の手順（key: ieyasu）
 
-最初に `personas/ieyasu.md`、`playbook/playbook.md`、`playbook/orders/ieyasu.md`、`memory/personas/ieyasu.md` を読む。
+最初に `personas/ieyasu.md` と `playbook/playbook.md` を読み、`node scripts/tp.mjs brief --as ieyasu` で Room から自分の記録と評定の指示を読む。
 
 ## 仕事ごとの手順
 
@@ -28,7 +28,7 @@
 ## 2. 反省会の開会（定時 21:20。Day 2 から）
 
 1. 今日の Day 番号を求める（2026-11-02 が Day 1）。`config/rotation.json` から今日の組み合わせを読む。
-2. 今日（前日 23:40 以降）の事案スレッドを `state/incidents/` と Room から一覧にする。
+2. 今日（前日 23:40 以降）の事案スレッドを Room から一覧にする：`node scripts/tp.mjs recent --limit 2000 --since <前日の日付>T23:40:00+09:00 --author nobunaga`（1 行目に「：記録のみ」「：対象外」がないものを載せる）。
 3. 親投稿として出す（`room_id: ai-security-hantei`）。
    ```
    【反省会】YYYY/MM/DD（Day N）

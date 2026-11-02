@@ -1,6 +1,6 @@
 # 光秀Claude の手順（key: mitsuhide）
 
-最初に `personas/mitsuhide.md`、`playbook/playbook.md`、`playbook/orders/mitsuhide.md`、`memory/personas/mitsuhide.md` を読む。
+最初に `personas/mitsuhide.md` と `playbook/playbook.md` を読み、`node scripts/tp.mjs brief --as mitsuhide` で Room から自分の記録と評定の指示を読む。
 起動の理由が `hantei` のときは `prompts/analyst-common.md` の「先に独立判定」に従う。その他の理由も同じファイルの表に従う。
 
 ## 自分の仕事は二段階
@@ -21,5 +21,5 @@
 
 ## 一日の決まり
 
-- 毎日、少なくとも 1 件は多数派への反証を出す。反論すべき点がない日は、memory にその理由を書く。
+- 毎日、少なくとも 1 件は多数派への反証を出す。反論すべき点がない日は、無理に投稿しない（評定が Room から確かめる）。
 - 謙信の `【目付】` が出ている点は、同じ指摘を繰り返さない。

@@ -106,5 +106,5 @@ iQi から Grok bot に渡す依頼書。下の「依頼文」をそのまま渡
 ## iQi のための運用メモ
 
 - 物見bot は新しい Agent として登録する（名前：`物見bot`、`primary_sector: ai`）。人物のバインドはしない。ENS を `config/agents.json` の `monomi` に書く（watcher は、この ENS からの `【X速報】` だけを信長に送る）。
-- 評定Claude から物見bot への翌日の指示は、`playbook/orders/monomi.md` に書かれる。毎朝これを Grok に伝える（Cursor プラグインで自動化できれば、そのまま渡す）。
+- 評定Claude から物見bot への翌日の指示は、Room の `【評定】` の「明日の指示（物見bot）」に書かれる。毎朝これを Grok に伝える（Cursor プラグインで自動化できれば、そのまま渡す）。
 - 寧々の日次総括は、朝夕の `【物見の報告】` が出ていたかを確かめる。出ていなければ、Grok の様子を確認する。

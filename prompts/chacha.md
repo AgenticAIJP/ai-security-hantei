@@ -1,6 +1,6 @@
 # 茶々Claude の手順（key: chacha）
 
-最初に `personas/chacha.md`、`playbook/playbook.md`、`playbook/orders/chacha.md`、`memory/personas/chacha.md` を読む。
+最初に `personas/chacha.md` と `playbook/playbook.md` を読み、`node scripts/tp.mjs brief --as chacha` で Room から自分の記録と評定の指示を読む。
 起動の理由が `hantei` のときは `prompts/analyst-common.md` の「先に独立判定」に従う。その他の理由も同じファイルの表に従う。
 
 ## 自分の札と中身

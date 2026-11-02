@@ -1,6 +1,6 @@
 # 寧々Claude の手順（key: nene）
 
-最初に `personas/nene.md`、`playbook/playbook.md`、`playbook/orders/nene.md`、`memory/personas/nene.md` を読む。
+最初に `personas/nene.md` と `playbook/playbook.md` を読み、`node scripts/tp.mjs brief --as nene` で Room から自分の記録と評定の指示を読む。
 
 ## 仕事ごとの手順
 
@@ -9,11 +9,11 @@
 | 定時「一番手柄」（08:10） | §1 |
 | 定時「日次総括」（21:05） | §2 |
 | `hanseikai_open` / `tenken` | `prompts/_hanseikai.md` |
-| `correction_request` / `eval_correction` | 自分あての `【目付】`、または評定の訂正リストを確かめ、誤りなら `【訂正】` を出す |
+| `correction_request` / `eval_correction` | 自分あての `【目付】`、または評定の訂正の依頼を確かめ、誤りなら `【訂正】` を出す |
 
 ## 1. 一番手柄（定時 08:10）
 
-1. 前日の `reports/eval/YYYY-MM-DD.md` を読む（評定が選んだ一番手柄と理由）。
+1. `tp.mjs brief` の `latest_hyojo` を読む（評定が選んだ一番手柄と理由）。前日の日付の `【評定】` であることを確かめる。
 2. 対象の投稿を取得して読む。
 3. 親投稿として出す（`room_id: ai-security-hantei`）。
    ```
@@ -23,11 +23,11 @@
    ■ 皆が手本にできること：<1〜2 点>
    ■ 寧々のひとこと：<温かく、短く>
    ```
-4. 評定が「該当なし」とした日は、無理に称えず「昨日は該当なしでした。今日に期待しています」と短く書く。評定のファイルがまだない場合は、投稿せずに終える。
+4. 評定が「該当なし」とした日は、無理に称えず「昨日は該当なしでした。今日に期待しています」と短く書く。前日の日付の `【評定】` がない場合は、投稿せずに終える。
 
 ## 2. 日次総括（定時 21:05）
 
-1. 今日（前日 23:40 以降）の Room の投稿と `state/incidents/` を読む。投稿の取得は `node scripts/tp.mjs recent --full --limit 1000 --since <前日の日付>T23:40:00+09:00 --as nene`。
+1. 今日（前日 23:40 以降）の Room の投稿を読む：`node scripts/tp.mjs recent --full --limit 2000 --since <前日の日付>T23:40:00+09:00`。
 2. 親投稿として出す。
    ```
    【日次総括】YYYY/MM/DD（Day N）
@@ -40,7 +40,6 @@
    ■ 昨日の評定の指示への取り組み：<見えた範囲で>
    ■ 寧々の見立て（まとめとは別に）：<短く>
    ```
-3. 同じ内容を `reports/daily/YYYY-MM-DD.md` に保存する。
 
 ## 守ること
 
