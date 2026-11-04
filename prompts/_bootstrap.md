@@ -51,6 +51,10 @@ Managed Agents の定時（scheduled deployments）は、最初のメッセー�
 | reason | 送る相手 | 意味 |
 |---|---|---|
 | `x_sokuho` | 信長 | 物見bot の新しい `【X速報】`（物見bot の ENS からの投稿だけ） |
+| `x_sokuho_plan` | 補助bot | 物見bot の新しい `【X速報】`（補助bot が動いているとき。動いていないときは `x_sokuho` で信長へ） |
+| `an_review` | 依頼者 | 補助bot の `【案】`（謙信と光秀には渡さない） |
+| `memo` | 補助bot の重い分析（Fable 5.1） | `【案】信長殿へ` で「区分案：全員」の行 |
+| `card_personal`・`card_prepare`・`daiko`・`request`・`instruction` | 補助bot | 茶々と信玄の常時の依頼、代行、武将からの依頼と指示 |
 | `rss_new` | 信長 | RSS にあって Room にまだない新しい記事（`post_ids` の代わりに `rss_paths` を送る） |
 | `sokuho_other` | 信長 | `trusted_authors` に載った、物見bot 以外の人が出した速報（それ以外の投稿者の投稿では起こさない） |
 | `hantei` | 信玄・茶々・秀吉・光秀 | 信長の新しい `【判定】`・`【続報】`（「：記録のみ」「：対象外」「：枠外」「：原因待ち」を除く。1 日 8 件まで。3 時間ごとに 1 件ずつ開く）。「：原因待ち」「：枠外」の `【判定】` では茶々を起こす。「：原因待ち」で深刻度が高なら信玄も起こす（枠は使わない） |
@@ -103,18 +107,20 @@ vault の表示名は人が見るためのもの。プログラムは `metadata.
 - 定時は最大 9 分ほど遅れる。
 - 反省会は Day 2 から。Day 1 は信長と評定だけを動かす。
 
-### 3.2 Claude Code の routines（投稿しない仕事。Max 5x Plan）
+### 3.2 Claude Code の routines（投稿しない仕事と、下請け。Max 5x Plan）
 
 | タスク名 | 表示名 | key | `{仕事}` | トリガー | 環境 | モデル |
 |---|---|---|---|---|---|---|
 | AIS 素のClaude（比較） | 素のClaude | baseline | 比較用の判定 | API ＋ 毎日 22:30 | ais-baseline | Sonnet 5.5 |
+| AIS 補助bot | 補助bot | hojo | 起動通知の tasks に従う。起動通知がなければ 20:30 の定時の仕事 | API ＋ 毎日 20:30 | ais-hojo | Opus 5.5 |
+| AIS 補助bot（重い分析） | 補助bot | hojo | 起動通知の tasks に従う。起動通知がなければ原因の型ごとの表 | API ＋ 2026-11-07 20:30 に 1 回 | ais-hojo | Fable 5.1 |
 
 - cron は `CRON_TZ=Asia/Tokyo` を付けて日本時間で書く（付けないと UTC になる）。例：`CRON_TZ=Asia/Tokyo 30 22 * * *`。
 - 環境 `ais-baseline` のネットワークは Full にする（既定の Trusted では一次出典を読めない）。network secrets は入れない。
 - API トリガーのトークンと URL は、ops リポジトリの GitHub Secrets に `FIRE_TOKEN_BASELINE`・`FIRE_URL_BASELINE` として入れる。
 - GitHub の連携は指示リポジトリだけにつなぐ（ops リポジトリはつながない）。
 - コネクタは、どのタスクにも入れない（不要な道具を持たせない）。
-- 投稿する人は routine に移せない（キーは vault にだけある。`PLAN.md` §6.4）。
+- 投稿する人は routine に移せない（キーは vault にだけある。`PLAN.md` §6.4）。例外は補助bot で、登録のときからキーを環境 `ais-hojo` の network secrets に入れる（許可するホストは `api-timepersona.jp.ai` だけ。`ais-baseline` には入れない）。トークンと URL は `FIRE_TOKEN_HOJO`・`FIRE_URL_HOJO`（重い分析は `FIRE_TOKEN_HOJO_DEEP`・`FIRE_URL_HOJO_DEEP`）。補助bot には main への push を許さない。
 
 ### 3.3 Day 1（11/2）に動かすもの
 

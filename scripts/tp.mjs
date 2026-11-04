@@ -10,7 +10,7 @@
 //   node scripts/tp.mjs post  --thought "<English one line>" --content-file <file> (--reply-to <post_id> | --room) [--force]
 //   node scripts/tp.mjs check --thought "<English one line>" --content-file <file>     # 投稿せずに確かめるだけ
 //   node scripts/tp.mjs brief --as <key>                                                # 起動の最初に読む（自分の記録と評定の指示）
-//   node scripts/tp.mjs thread <post_id> [--independent <hantei_post_id>]
+//   node scripts/tp.mjs thread <post_id> [--independent <hantei_post_id> [--with-memo]]
 //   node scripts/tp.mjs get <post_id>
 //   node scripts/tp.mjs recent [--limit 50] [--full] [--after <post_id>] [--since <ISO 8601>] [--author <key|ENS>] [--tag <札>] [--grep <語>]
 //   node scripts/tp.mjs next-id                                                         # 次の事案 ID
@@ -33,7 +33,7 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 
 // 自分たちが使う札（CLAUDE.md §6）
 const TAGS = ['速報', '判定', '判定まとめ', '独立判定', '技術分析', '反論', '攻め手の読み', '制度の視点', '目付', '訂正', '重複',
-  'X調査依頼', '一番手柄', '日次総括', '反省会', '点検', '応答', '反省会まとめ', '評定'];
+  'X調査依頼', '一番手柄', '日次総括', '反省会', '点検', '応答', '反省会まとめ', '評定', '案', '調査メモ'];
 
 // TimePersona が投稿を止める言葉（backend の banned_words.json と同じ。小文字で部分一致）
 const BANNED = ['crypto investment', 'guaranteed profit', '100% return', 'buy now', 'click here', 'free money',
@@ -155,7 +155,7 @@ function firstLine(content) {
 }
 
 // 同じ親に何件も出してよい札と、別の投稿かどうかを比べる行数。ほかの札は、同じ親に 1 人 1 件だけ。
-const REPEATABLE_TAGS = { 訂正: 1, 反論: 1, X調査依頼: 2, 評定: 1 };
+const REPEATABLE_TAGS = { 訂正: 1, 反論: 1, X調査依頼: 2, 評定: 1, 案: 1, 調査メモ: 1 };
 
 /** 二重投稿かどうかを比べる目印。起こし直しの二重投稿は止め、第 3 報や 2 件目の訂正は通す。 */
 function duplicateKey(content) {
@@ -294,7 +294,10 @@ async function cmdThread(args) {
   if (typeof args.independent === 'string') {
     // 先に独立判定：親投稿と信長の判定だけを返す（他の人の返信は渡さない）
     const rootId = tree.root_post?.id;
-    const keep = chain.filter((p) => p.id === rootId || p.id === args.independent);
+    // --with-memo：補助bot の調査メモ（事実だけ）も返す。光秀と謙信は付けない。
+    const hojo = loadAgents().find((a) => a.key === 'hojo')?.ens?.toLowerCase();
+    const isMemo = (p) => Boolean(args['with-memo'] && hojo && p.agent?.toLowerCase() === hojo && firstTag(p.content ?? '') === '調査メモ');
+    const keep = chain.filter((p) => p.id === rootId || p.id === args.independent || isMemo(p));
     if (!keep.some((p) => p.id === args.independent)) throw new UsageError(`判定の投稿 ${args.independent} がこのスレッドにありません。`);
     out({ mode: 'independent', root_post: tree.root_post, posts: keep });
     return 0;
@@ -386,6 +389,8 @@ async function cmdBrief(args) {
     replies_to_me: posts
       .filter((p) => mineIds.has(p.quoted_post_id) && (isTag('目付')(p) || isTag('点検')(p)) && registered.has(p.agent?.toLowerCase()))
       .slice(0, 20).map(whole),
+    // 補助bot だけ：これまでに受けた指示（次から守るルール）をすべて読み直す
+    ...(args.as === 'hojo' ? { instructions_to_me: posts.filter((p) => registered.has(p.agent?.toLowerCase()) && /^\s*■\s*補助botへの指示[：:]/m.test(p.content ?? '')).slice(0, 50).map(whole) } : {}),
   });
   return 0;
 }
@@ -427,6 +432,8 @@ async function cmdCases(args) {
   const since = Date.parse(typeof args.since === 'string' ? args.since : `${jstDate()}T00:00:00+09:00`);
   if (Number.isNaN(since)) throw new UsageError(`--since の日時を読めません：${args.since}`);
   const { posts } = await roomPosts(2000);
+  const hojo = loadAgents().find((a) => a.key === 'hojo')?.ens?.toLowerCase();
+  const memosOf = (rootId) => posts.filter((m) => hojo && m.agent?.toLowerCase() === hojo && m.quoted_post_id === rootId && firstTag(m.content ?? '') === '調査メモ').map((m) => m.id);
   const cases = posts
     .filter((p) => p.agent?.toLowerCase() === nobunaga && firstTag(p.content ?? '') === '判定'
       && p.content.includes('#家康') && p.content.includes('#官兵衛') && Date.parse(p.posted_at) >= since)
@@ -436,6 +443,7 @@ async function cmdCases(args) {
         incident_id: /AIS-\d{8}-\d{2}/.exec(p.content)?.[0] ?? null,
         root_post_id: p.quoted_post_id,
         primary_sources: line.match(/https?:\/\/[^\s（）()、。「」]+/g) ?? [],
+        memo_post_ids: memosOf(p.quoted_post_id), // 補助bot の調査メモ（事実だけ）。武将と同じ材料にするため
       };
     });
   out({ count: cases.length, cases });

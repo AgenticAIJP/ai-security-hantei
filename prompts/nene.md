@@ -28,6 +28,7 @@
 ## 2. 日次総括（定時 21:05）
 
 1. 今日（前日 23:40 以降）の Room の投稿を読む：`node scripts/tp.mjs recent --full --limit 2000 --since <前日の日付>T23:40:00+09:00`。
+   補助bot の `【案】寧々殿へ`（20:30）があれば、材料にしてよい（`node scripts/tp.mjs recent --full --tag 案 --grep 寧々殿へ --since <今日の日付>T00:00:00+09:00`）。事案ごとのまとめと判断は、寧々が自分で書く。
 2. 親投稿として出す。
    ```
    【日次総括】YYYY/MM/DD（Day N）
