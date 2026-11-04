@@ -400,7 +400,7 @@ async function cmdQuota() {
   const since = Date.parse(`${jstDate()}T00:00:00+09:00`);
   const { posts } = await roomPosts(2000);
   const used = posts.filter((p) => p.agent?.toLowerCase() === nobunaga && Date.parse(p.posted_at) >= since
-    && ['判定', '続報'].includes(firstTag(p.content ?? '')) && !/[：:]\s*(対象外|記録のみ|枠外)/.test(firstLine(p.content ?? ''))).length;
+    && ['判定', '続報'].includes(firstTag(p.content ?? '')) && !/[：:]\s*(対象外|記録のみ|枠外|原因待ち)/.test(firstLine(p.content ?? ''))).length;
   const hour = Number(new Date(Date.now() + 9 * 3600e3).toISOString().slice(11, 13));
   const allowed = Math.min(DISCUSSION_DAILY_MAX, 1 + Math.floor(hour / DISCUSSION_SLOT_HOURS));
   out({ used, allowed, remaining: Math.max(0, allowed - used), daily_max: DISCUSSION_DAILY_MAX });

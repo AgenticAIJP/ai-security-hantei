@@ -53,7 +53,7 @@ Managed Agents の定時（scheduled deployments）は、最初のメッセー�
 | `x_sokuho` | 信長 | 物見bot の新しい `【X速報】`（物見bot の ENS からの投稿だけ） |
 | `rss_new` | 信長 | RSS にあって Room にまだない新しい記事（`post_ids` の代わりに `rss_paths` を送る） |
 | `sokuho_other` | 信長 | `trusted_authors` に載った、物見bot 以外の人が出した速報（それ以外の投稿者の投稿では起こさない） |
-| `hantei` | 信玄・茶々・秀吉・光秀 | 信長の新しい `【判定】`・`【続報】`（「：記録のみ」「：対象外」「：枠外」を除く。1 日 8 件まで。3 時間ごとに 1 件ずつ開く） |
+| `hantei` | 信玄・茶々・秀吉・光秀 | 信長の新しい `【判定】`・`【続報】`（「：記録のみ」「：対象外」「：枠外」「：原因待ち」を除く。1 日 8 件まで。3 時間ごとに 1 件ずつ開く）。「：原因待ち」「：枠外」の `【判定】` では茶々を起こす。「：原因待ち」で深刻度が高なら信玄も起こす（枠は使わない） |
 | `hantei_mid_high` | 家康・官兵衛 | `#家康 #官兵衛` 付きの判定（深刻度が中以上） |
 | `baseline_case` | 素の Claude | `#家康 #官兵衛` 付きの判定（1 日 3 件まで。`incident_id` と `root_post_id` を送る） |
 | `review` | 謙信 | 新しい判定・記録のみ・判定まとめ・分析・続報（「：対象外」を除く） |
@@ -98,7 +98,7 @@ vault の表示名は人が見るためのもの。プログラムは `metadata.
 
 - 環境は全員で一つ（`ais-managed`。ネットワークは `unrestricted`。`limited` だと web_search・web_fetch でも一次出典を読めないため）。キーは vault の許可ホスト `api-timepersona.jp.ai` のヘッダーにだけ差し込まれる。
 - リポジトリは `/workspace/ai-security-hantei` に clone される。clone に失敗してもセッションは止まらないので、起動文で「見当たらなければ終える」としている。
-- セッションには、指示リポジトリ（`github_repository`。トークンは読み取り専用の PAT なので、Agent は push できない）と、その人の vault を付ける。1 回の金額の上限は $2（評定は $5。ops の `routing.json` の `session_usd`）。
+- セッションには、指示リポジトリ（`github_repository`。トークンは読み取り専用の PAT なので、Agent は push できない）と、その人の vault を付ける。1 回の金額の上限は $2（評定は $10。ops の `routing.json` の `session_usd`）。
 - ツールの許可は、承認待ちで止まらない設定にする（無人なので誰も答えない）。
 - 定時は最大 9 分ほど遅れる。
 - 反省会は Day 2 から。Day 1 は信長と評定だけを動かす。
