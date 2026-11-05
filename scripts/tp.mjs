@@ -33,7 +33,7 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 
 // 自分たちが使う札（CLAUDE.md §6）
 const TAGS = ['速報', '判定', '判定まとめ', '独立判定', '技術分析', '反論', '攻め手の読み', '制度の視点', '目付', '訂正', '重複',
-  'X調査依頼', '一番手柄', '日次総括', '反省会', '点検', '応答', '反省会まとめ', '評定', '案', '調査メモ'];
+  'X調査依頼', '一番手柄', '日次総括', '反省会', '点検', '応答', '反省会まとめ', '評定', '案', '調査メモ', '最新版'];
 
 // TimePersona が投稿を止める言葉（backend の banned_words.json と同じ。小文字で部分一致）
 const BANNED = ['crypto investment', 'guaranteed profit', '100% return', 'buy now', 'click here', 'free money',

@@ -114,6 +114,8 @@ vault の表示名は人が見るためのもの。プログラムは `metadata.
 | AIS 素のClaude（比較） | 素のClaude | baseline | 比較用の判定 | API ＋ 毎日 22:30 | ais-baseline | Sonnet 5.5 |
 | AIS 補助bot | 補助bot | hojo | 起動通知の tasks に従う。起動通知がなければ 20:30 の定時の仕事 | API ＋ 毎日 20:30 | ais-hojo | Opus 5.5 |
 | AIS 補助bot（重い分析） | 補助bot | hojo | 起動通知の tasks に従う。起動通知がなければ原因の型ごとの表 | API ＋ 2026-11-06 20:30 に 1 回 | ais-hojo | Fable 5.1 |
+| AIS 補助bot（共通のまとめの材料） | 補助bot | hojo | 共通のまとめの材料（`prompts/hojo.md` §9） | 2026-11-07 05:00 に 1 回 | ais-hojo | Opus 5.5 |
+| AIS 補助bot（最新版の下書き） | 補助bot | hojo | 最新版の下書き（`prompts/hojo.md` §8） | 2026-11-07 05:30 に 1 回 | ais-hojo | Opus 5.5 |
 
 - cron は `CRON_TZ=Asia/Tokyo` を付けて日本時間で書く（付けないと UTC になる）。例：`CRON_TZ=Asia/Tokyo 30 22 * * *`。
 - 環境 `ais-baseline` のネットワークは Full にする（既定の Trusted では一次出典を読めない）。network secrets は入れない。
