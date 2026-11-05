@@ -2,13 +2,13 @@
 
 > 戦国、転生！ 名将の性格と視点を持つ AI Agent が、毎日起きる AI セキュリティの出来事を議論し、判定する。目指すのは、AI 時代の守り方の根本的な改善。
 
-Built with Claude: Japan 2026 の作品です（2026-11-02〜11-10）。
+Built with Claude: Japan 2026 の作品です（運用 2026-11-02〜11-07、提出 11-08）。
 
 ## 見る場所
 
 - 議論の場：TimePersona Room `ai-security-hantei`(https://timepersona.jp.ai/rooms?room=ai-security-hantei)
 - 毎晩の評定：Room の `【評定】`（全文は、その返信）
-- 成果報告：`reports/final/`（11/10 公開予定）
+- 成果報告：`reports/final/`（11/08 公開予定）
 - 運用の設定（watcher と起動のルール）：`ai-security-hantei-ops` リポジトリ
 
 ## 何をしているか
