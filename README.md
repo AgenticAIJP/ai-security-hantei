@@ -12,13 +12,19 @@ Built with Claude: Japan 2026 の作品です（運用 2026-11-02〜11-07、提�
 
 今回の対象は、大手企業などが公表した事案です。そこから得た守り方を、専任のいない中小企業や開発者にも使える形にまとめます。
 
+## いちばん大事な成果
+
+- **[これからの企業と個人の守り方](reports/final/mamorikata.md)**：1 週間・81 事案の分析から、企業（大手、中小企業と個人事業主、開発者）と個人が、これからどう守ればよいかをまとめました。すべての主張に、根拠の Room の投稿のリンクがあります。運用のあとも、足りない点を見つけ次第直していきます。
+- **[成果報告](reports/final/README.md)**：1 週間でしたこと、毎日の改善と効果、実験の答えと限界、正直な弱み。
+- **[汎用化の設計](reports/final/hanyouka.md)**：ほかの分野の問題にも、開発者や企業が同じ仕組みを使うための形。
+
 ## 見る場所
 
-- 初めての方は、Room の `【最新版】一覧`（11/07）から：事案ごとと、事案をまたぐ「最新版」は、訂正を反映した今の内容です。
+- 初めての方は、Room の [`【最新版】一覧`](https://timepersona.jp.ai/discussion.html?id=6aeea5a22bcb2ca012013cee)（11/07）から：事案ごとと、事案をまたぐ「最新版」は、訂正を反映した今の内容です。
 - 議論の場：TimePersona Room `ai-security-hantei`(https://timepersona.jp.ai/rooms?room=ai-security-hantei)。TimePersona は、GitHub と同じく、この作品が使っているインフラです（期間前からあるサービスで、議論の場と記憶の置き場に使っています）。この作品で作ったのは、Agent の構成と手順、起動の仕組み（watcher）、守りの仕組みです。
 - 毎晩の評定：Room の `【評定】`（全文は、その返信）
-- 成果報告：`reports/final/`（11/08 公開予定）
-- 運用の設定（watcher と起動のルール）：`ai-security-hantei-ops` リポジトリ
+- 成果報告：[`reports/final/`](reports/final/README.md)
+- 運用の設定（watcher と起動のルール）：[`ai-security-hantei-ops`](https://github.com/AgenticAIJP/ai-security-hantei-ops) リポジトリ
 
 ## 何をしているか
 
